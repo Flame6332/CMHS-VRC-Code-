@@ -4,12 +4,10 @@
 #pragma config(Motor,  port4,           rearRightWheel,     	tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port5,           leftArmLift1,         	tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port6,           leftArmLift2,    		tmotorVex393_MC29, openLoop)
-#pragma config(Motor,  port7,           leftArmLift3,         	tmotorVex393_MC29, openLoop)
-#pragma config(Motor,  port8,           rightArmLift1,         	tmotorVex393_MC29, openLoop)
-#pragma config(Motor,  port9,           rightArmLift1,     		tmotorVex393_MC29, openLoop)
-#pragma config(Motor,  port10,          rightArmLift1,         	tmotorVex393_MC29, openLoop)
-#pragma config(Motor,  port11,          leftClaw,         		tmotorVex393_MC29, openLoop)
-#pragma config(Motor,  port12,          rightClaw,         		tmotorVex393_MC29, openLoop)
+#pragma config(Motor,  port7,           rightArmLift1,         	tmotorVex393_MC29, openLoop)
+#pragma config(Motor,  port8,           rightArmLift2,     		tmotorVex393_MC29, openLoop)
+#pragma config(Motor,  port9,          	leftClaw,         		tmotorVex393_MC29, openLoop)
+#pragma config(Motor,  port10,          rightClaw,         		tmotorVex393_MC29, openLoop)
 
 #pragma platform(VEX)
 
@@ -59,7 +57,7 @@ int frontRightVector = 0;
 int rearLeftVector = 0;
 int rearRightVector = 0;
 
-void moveForward(int speed) {
+/*void moveForward(int speed) {
     
 }
 void moveBackward(int speed) {
@@ -73,7 +71,7 @@ void strafeRight(int speed) {
 }
 void strafeRight(int speed) {
     
-}
+}*/
 
 void runWheels() {
     motor[frontLeftWheel] = frontLeftVector;
@@ -92,10 +90,8 @@ void resetWheelVectors() {
 void setArmLiftSpeed(int speed) {
     motor[leftArmLift1] = speed;
     motor[leftArmLift2] = speed;
-    motor[leftArmLift3] = speed;
     motor[rightArmLift1] = -speed;
     motor[rightArmLift2] = -speed;
-    motor[rightArmLift3] = -speed;
 }
 
 
