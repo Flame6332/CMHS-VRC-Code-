@@ -1,3 +1,14 @@
+/////////////////
+///
+///  NOTE: this code is not functional as the variables are only random examples.
+///
+////////////////
+
+
+
+
+
+
 #pragma config(Motor,  port1,           frontLeftWheel,    		tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port2,           frontRightWheel,        tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port3,           rearLeftWheel,         	tmotorVex393_MC29, openLoop)
@@ -38,7 +49,7 @@ void pre_auton() {
 
 	// All activities that occur before the competition starts
 	// Example: setting servo positions, extending arm, loading shotgun ...
-    // If your robot is a Transformer(copyrighted), than transformation 
+    // If your robot is a Transformer(copyrighted), then transformation occurs here
     
 }
 

@@ -38,7 +38,7 @@ void pre_auton() {
 
 	// All activities that occur before the competition starts
 	// Example: setting servo positions, extending arm, loading shotgun ...
-    // If your robot is a Transformer(copyrighted), than transformation 
+    // If your robot is a Transformer(copyrighted), then transformation occurs here
     
 }
 
@@ -54,18 +54,49 @@ void pre_auton() {
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 
-float exampleDecimalVariable = 50;
+int frontLeftVector = 0;
+int frontRightVector = 0;
+int rearLeftVector = 0;
+int rearRightVector = 0;
 
-bool aTrueOrFalseVariable = false;
-
-int exampleInteger = 13;
-
-void exampleFunction(float exampleInputVariable) {
+void moveForward(int speed) {
     
-  motor[driveTrainLeft] = (int) lift1Speed * speed; //changing the float (decimal) to an integer (whole number)
+}
+void moveBackward(int speed) {
+    
+}
+void strafeLeft(int speed) {
+    
+} 
+void strafeRight(int speed) {
+    
+}
+void strafeRight(int speed) {
     
 }
 
+void runWheels() {
+    motor[frontLeftWheel] = frontLeftVector;
+    motor[frontRightWheel] = frontRightVector;
+    motor[rearLeftWheel] = rearLeftVector;
+    motor[rearRightWheel] = rearRightVector;
+}
+
+void resetWheelVectors() {
+    frontLeftVector = 0;
+    frontRightVector = 0;
+    rearLeftVector = 0;
+    rearRightVector = 0;
+}
+
+void setArmLiftSpeed(int speed) {
+    motor[leftArmLift1] = speed;
+    motor[leftArmLift2] = speed;
+    motor[leftArmLift3] = speed;
+    motor[rightArmLift1] = -speed;
+    motor[rightArmLift2] = -speed;
+    motor[rightArmLift3] = -speed;
+}
 
 
 
@@ -80,30 +111,8 @@ void exampleFunction(float exampleInputVariable) {
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 task autonomous() {
-
-    motor[rightdrive] = 90; //motor speed ranges from 127 to -127
-    motor[leftdrive] = 90;
-
-    wait1Msec(6000); //wait 6 seconds
-
-    motor[rightdrive] = 90; //setting the motor to the specified speed
-    motor[leftdrive] =  30;
-
-    wait1Msec(2000);
-
-    motor[rightdrive] = 70;
-    motor[leftdrive] = 70;
-
-    wait1Msec(6000);
-
-    motor[rightdrive] = 0;
-    motor[leftdrive] = 0;
-
-    liftAll(1.5);
-
-    wait1Msec(6000);
-
-    stopAll(); //user created function
+    
+    ////////// i donut have anythang good here yet ///////
 
 }
 
@@ -122,37 +131,40 @@ task usercontrol() {
 /* an infinite loop */
 while (69 == 69) //lol, get rekt
 {
-
-    /*move the wheels*/
-    motor[rightdrive] = vexRT[Ch2];
-    //this will set the motor from -127 to 127 depending on the position of the stick's channer
-    motor[leftdrive] = vexRT[Ch3]; 
-
-  if (vexRT[Btn8R] == 1) {//if this button is clicked (aka = to 0)
-  
-      motor[liftDrive] = 60 * speed; //multiply by speed variable for easy changing of speed
- 
-  }
-
-  //Change Speed Command//
-  if (vexRT[Btn5U] == 1) { //while this button is held down, click following buttons to change speed
-
-        if (vexRT[Btn7D] == 1) { //normal low (1) speed
-          speed = 1;
-        }
-        else if (vexRT[Btn7L] == 1) { //faster medium (1.5) speed
-          speed = 1.5;
-        }
-        else if (vexRT[Btn7U] == 1) { //turbo (2) speed
-          speed = 2;
-        }
-
-  }
     
-    //robot trimming code
-    if (vexRT[Btn5D] == 1) {
-        speed += 0.1;    //speed = speed + 0.1
+    resetWheelVectors(); 
+    
+    //Moving forwards and backwards
+    frontLeftVector += vexRT[Ch3];
+    frontRightVector += vexRT[Ch3];
+    rearLeftVector += vexRT[Ch3];
+    rearRightVector += vexRT[Ch3];
+    
+    //Strafing left and right
+    frontLeftVector += vexRT[Ch4];
+    frontRightVector -= vexRT[Ch4];
+    rearLeftVector -= vexRT[Ch4];
+    rearRightVector += vexRT[Ch4];
+    
+    //Turning
+    frontLeftVector += vexRT[Ch1] *2;
+    frontRightVector -= vexRT[Ch1] *2;
+    rearLeftVector += vexRT[Ch1] *2;
+    rearRightVector -= vexRT[Ch1] *2;
+    
+    runWheels(); //inputs wheel vectors
+    
+    //Arm lift Control
+    if (vexRT[Btn8U] == 1) {
+        setArmLiftSpeed(127);
+    } 
+    else if (vexRT[Btn8D] == 1) {
+        setArmLiftSpeed(-127);
     }
-
+    else {
+        setArmLiftSpeed(0);
+    }
+    
+    
 }
 }
