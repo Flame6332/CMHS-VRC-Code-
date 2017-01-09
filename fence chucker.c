@@ -13,7 +13,7 @@
 
 //Competition Control and Duration Settings// DON'T MODIFY!
 #pragma competitionControl(Competition)
-#pragma autonomousDuration(20)
+#pragma autonomousDuration(15)
 #pragma userControlDuration(120)
 
 #include "Vex_Competition_Includes.c"   //Main competition background code...do not modify!
@@ -30,14 +30,14 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 void pre_auton() {
-  // Set bStopTasksBetweenModes to false if you want to keep user created tasks running between
-  // Autonomous and Tele-Op modes. You will need to manage all user created tasks if set to false.
-					bStopTasksBetweenModes = true; 
+	// Set bStopTasksBetweenModes to false if you want to keep user created tasks running between
+	// Autonomous and Tele-Op modes. You will need to manage all user created tasks if set to false.
+	bStopTasksBetweenModes = true;
 
 	// All activities that occur before the competition starts
 	// Example: setting servo positions, extending arm, loading shotgun ...
-    // If your robot is a Transformer(copyrighted), then transformation occurs here
-    
+	// If your robot is a Transformer(copyrighted), then transformation occurs here
+
 }
 
 
@@ -46,7 +46,7 @@ void pre_auton() {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
-//                             Used Variables and Funcions 
+//                             Used Variables and Funcions
 //
 // Any variables or functions that you will be using are initialized in this area right here.
 //
@@ -58,40 +58,40 @@ int rearLeftVector = 0;
 int rearRightVector = 0;
 
 /*void moveForward(int speed) {
-    
+
 }
 void moveBackward(int speed) {
-    
+
 }
 void strafeLeft(int speed) {
-    
-} 
-void strafeRight(int speed) {
-    
+
 }
 void strafeRight(int speed) {
-    
+
+}
+void strafeRight(int speed) {
+
 }*/
 
 void runWheels() {
-    motor[frontLeftWheel] = frontLeftVector;
-    motor[frontRightWheel] = frontRightVector;
-    motor[rearLeftWheel] = rearLeftVector;
-    motor[rearRightWheel] = rearRightVector;
+	motor[frontLeftWheel] = frontLeftVector;
+	motor[frontRightWheel] = frontRightVector;
+	motor[rearLeftWheel] = rearLeftVector;
+	motor[rearRightWheel] = rearRightVector;
 }
 
 void resetWheelVectors() {
-    frontLeftVector = 0;
-    frontRightVector = 0;
-    rearLeftVector = 0;
-    rearRightVector = 0;
+	frontLeftVector = 0;
+	frontRightVector = 0;
+	rearLeftVector = 0;
+	rearRightVector = 0;
 }
 
 void setArmLiftSpeed(int speed) {
-    motor[leftArmLift1] = speed;
-    motor[leftArmLift2] = speed;
-    motor[rightArmLift1] = -speed;
-    motor[rightArmLift2] = -speed;
+	motor[leftArmLift1] = speed;
+	motor[leftArmLift2] = speed;
+	motor[rightArmLift1] = -speed;
+	motor[rightArmLift2] = -speed;
 }
 
 
@@ -107,8 +107,8 @@ void setArmLiftSpeed(int speed) {
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 task autonomous() {
-    
-    ////////// i donut have anythang good here yet ///////
+
+	////////// i donut have anythang good here yet ///////
 
 }
 
@@ -124,43 +124,61 @@ task autonomous() {
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 task usercontrol() {
-/* an infinite loop */
-while (69 == 69) //lol, get rekt
-{
-    
-    resetWheelVectors(); 
-    
-    //Moving forwards and backwards
-    frontLeftVector += vexRT[Ch3];
-    frontRightVector += vexRT[Ch3];
-    rearLeftVector += vexRT[Ch3];
-    rearRightVector += vexRT[Ch3];
-    
-    //Strafing left and right
-    frontLeftVector += vexRT[Ch4];
-    frontRightVector -= vexRT[Ch4];
-    rearLeftVector -= vexRT[Ch4];
-    rearRightVector += vexRT[Ch4];
-    
-    //Turning
-    frontLeftVector += vexRT[Ch1] *2;
-    frontRightVector -= vexRT[Ch1] *2;
-    rearLeftVector += vexRT[Ch1] *2;
-    rearRightVector -= vexRT[Ch1] *2;
-    
-    runWheels(); //inputs wheel vectors
-    
-    //Arm lift Control
-    if (vexRT[Btn8U] == 1) {
-        setArmLiftSpeed(127);
-    } 
-    else if (vexRT[Btn8D] == 1) {
-        setArmLiftSpeed(-127);
-    }
-    else {
-        setArmLiftSpeed(0);
-    }
-    
-    
-}
+	/* an infinite loop */
+	while (69 == 69) //lol, get rekt
+	{
+
+		resetWheelVectors();
+
+		//Moving forwards and backwards
+		frontLeftVector += vexRT[Ch3];
+		frontRightVector += vexRT[Ch3];
+		rearLeftVector += vexRT[Ch3];
+		rearRightVector += vexRT[Ch3];
+
+		//Strafing left and right
+		frontLeftVector += vexRT[Ch4];
+		frontRightVector -= vexRT[Ch4];
+		rearLeftVector -= vexRT[Ch4];
+		rearRightVector += vexRT[Ch4];
+
+		//Turning
+		frontLeftVector -= vexRT[Ch1] *2;
+		frontRightVector += vexRT[Ch1] *2;
+		rearLeftVector -= vexRT[Ch1] *2;
+		rearRightVector += vexRT[Ch1] *2;
+
+		runWheels(); //inputs wheel vectors
+
+		//Arm lift Control
+		if (vexRT[Btn6U] == 1) {
+			setArmLiftSpeed(127);
+		}
+		else if (vexRT[Btn5U] == 1) {
+			setArmLiftSpeed(-127);
+		}
+		else {
+			setArmLiftSpeed(0);
+		}
+
+		//pincer control open
+		if (vexRT[Btn6D] == 1) {
+			motor[leftClaw] = 127;
+			motor[rightClaw] = -127;
+		}
+		//pincer control close
+		if (vexRT[Btn5D] == 1) {
+			motor[leftClaw] = -127;
+			motor[rightClaw] = 127;
+		}
+
+		//fine tune left claw
+		if (vexRT[Btn7L] == 1) {motor[leftClaw] = -10;}
+		if (vexRT[Btn7R] == 1) {motor[leftClaw] = 10;}
+
+		//fine tune right claw
+		if (vexRT[Btn8L] == 1) {motor[rightClaw] = 10;}
+		if (vexRT[Btn8L] == 1) {motor[rightClaw] = -10;}
+
+	}
 }
