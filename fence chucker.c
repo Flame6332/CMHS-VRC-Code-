@@ -143,10 +143,10 @@ task usercontrol() {
 		rearRightVector += vexRT[Ch4];
 
 		//Turning
-		frontLeftVector -= vexRT[Ch1] *2;
-		frontRightVector += vexRT[Ch1] *2;
-		rearLeftVector -= vexRT[Ch1] *2;
-		rearRightVector += vexRT[Ch1] *2;
+		frontLeftVector += vexRT[Ch1] *2;
+		frontRightVector -= vexRT[Ch1] *2;
+		rearLeftVector += vexRT[Ch1] *2;
+		rearRightVector -= vexRT[Ch1] *2;
 
 		runWheels(); //inputs wheel vectors
 
