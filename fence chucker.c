@@ -58,45 +58,35 @@ int frontRightVector = 0;
 int rearLeftVector = 0;
 int rearRightVector = 0;
 
-/*void moveForward(int speed) {
-
+void moveForward(int speed) {
+    	motor[frontLeftWheel] = speed;
+	motor[frontRightWheel] = speed;
+	motor[rearLeftWheel] = speed;
+	motor[rearRightWheel] = speed;
 }
 void moveBackward(int speed) {
 
 }
+
 void strafeLeft(int speed) {
 
 }
 void strafeRight(int speed) {
 
 }
-void strafeRight(int speed) {
 
-}*/
-
-void moveForwards() {
+void rotateLeft(int speed) {
     
 }
-
-void moveLeft() {
-    
-}
-void moveRight() {
-    
-}
-void moveBackwards() {
-    
-}
-
-void rotateLeft() {
-    
-}
-void rotateRight() {
+void rotateRight(int speed) {
     
 }
 
 void stopMoving() {
-    
+    	motor[frontLeftWheel] = 0;
+	motor[frontRightWheel] = 0;
+	motor[rearLeftWheel] = 0;
+	motor[rearRightWheel] = 0;
 }
 
 void runWheels() {
@@ -168,6 +158,7 @@ task usercontrol() {
 		rearLeftVector += vexRT[Ch3];
 		rearRightVector += vexRT[Ch3];
 
+		
 		//Strafing left and right
 		frontLeftVector += vexRT[Ch4];
 		frontRightVector -= vexRT[Ch4];
