@@ -74,6 +74,31 @@ void strafeRight(int speed) {
 
 }*/
 
+void moveForwards() {
+    
+}
+
+void moveLeft() {
+    
+}
+void moveRight() {
+    
+}
+void moveBackwards() {
+    
+}
+
+void rotateLeft() {
+    
+}
+void rotateRight() {
+    
+}
+
+void stopMoving() {
+    
+}
+
 void runWheels() {
 	motor[frontLeftWheel] = frontLeftVector;
 	motor[frontRightWheel] = frontRightVector;
@@ -180,12 +205,12 @@ task usercontrol() {
 		}
 
 		//fine tune left claw
-		if (vexRT[Btn7L] == 1) {motor[leftClaw] = -perviePincerFineTuneSpeed;}
+		/*if (vexRT[Btn7L] == 1) {motor[leftClaw] = -perviePincerFineTuneSpeed;}
 		if (vexRT[Btn7R] == 1) {motor[leftClaw] = perviePincerFineTuneSpeed;}
 
 		//fine tune right claw
 		if (vexRT[Btn8R] == 1) {motor[rightClaw] = perviePincerFineTuneSpeed;}
-		if (vexRT[Btn8L] == 1) {motor[rightClaw] = -perviePincerFineTuneSpeed;}
+		if (vexRT[Btn8L] == 1) {motor[rightClaw] = -perviePincerFineTuneSpeed;}*/
 
 	}
 }
