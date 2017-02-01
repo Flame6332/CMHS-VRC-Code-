@@ -115,7 +115,7 @@ void resetPincerClaws() {
 	motor[rightClaw] = 0;
 }
 
-int perviePincerFineTuneSpeed = 60;
+int perviePincerPressureSpeed = 60;
 
 
 
