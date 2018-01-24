@@ -58,8 +58,11 @@ int frontRightVector = 0;
 int rearLeftVector = 0;
 int rearRightVector = 0;
 
-/*void moveForward(int speed) {
-
+void moveForward(int speed) {
+	motor[frontLeftWheel] = speed;
+	motor[frontRightWheel] = speed;
+	motor[rearLeftWheel] = speed;
+	motor[rearRightWheel] = speed;
 }
 void moveBackward(int speed) {
 
@@ -72,31 +75,20 @@ void strafeRight(int speed) {
 }
 void strafeRight(int speed) {
 
-}*/
-
-void moveForwards() {
-    
 }
-
-void moveLeft() {
-    
-}
-void moveRight() {
-    
-}
-void moveBackwards() {
-    
-}
-
 void rotateLeft() {
-    
+
 }
 void rotateRight() {
-    
+
 }
 
 void stopMoving() {
-    
+	int speed = 0;
+	motor[frontLeftWheel] = speed;
+	motor[frontRightWheel] = speed;
+	motor[rearLeftWheel] = speed;
+	motor[rearRightWheel] = speed;
 }
 
 void runWheels() {
@@ -122,9 +114,20 @@ void resetPincerClaw() {
 	motor[clawDrive] = 0;
 }
 
+void runPincerClaw(int speed) {
+	motor[clawDrive] = speed;
+}
+
 int perviePincerPressureSpeed = 60;
 
+void runPulley(int speed) {
+	motor[leftPulleyCrank] = speed;
+	motor[rightPulleyCrank] = speed;
+}
 
+void shiftGear(int speed) {
+	motor[gearShiftDrive] = speed;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -136,7 +139,19 @@ int perviePincerPressureSpeed = 60;
 /////////////////////////////////////////////////////////////////////////////////////////
 task autonomous() {
 
-	////////// i donut have anythang good here yet ///////
+	setArmLiftSpeed(127);
+	runPincerClaw(127);
+
+	wait1Msec(3000);
+
+	runPincerClaw(0);
+	setArmLiftSpeed(0);
+
+	moveForward(127);
+
+	wait1Msec(3000);
+
+	stopMoving();
 
 }
 
@@ -157,7 +172,7 @@ task usercontrol() {
 	{
 
 		resetWheelVectors();
-		resetPincerClaws();
+		resetPincerClaw();
 
 		//Moving forwards and backwards
 		frontLeftVector += vexRT[Ch3];
@@ -197,6 +212,26 @@ task usercontrol() {
 		//pincer control close
 		if (vexRT[Btn5D] == 1) {
 			motor[clawDrive] = -127;
+		}
+
+		//default
+		runPulley(0);
+		shiftGear(0);
+
+		//control pulley
+		if (vexRT[Btn7L] == 1) {
+			runPulley(127);
+		} else if (vexRT[Btn7R] == 1) {
+			runPulley(-127);
+		}
+
+		//shift gear
+		if (vexRT[Btn7U] == 1) {
+			shiftGear(70);
+			runPulley(20);
+		} else if (vexRT[Btn7D] == 1) {
+			shiftGear(-70);
+			runPulley(20);
 		}
 
 		//fine tune left claw
