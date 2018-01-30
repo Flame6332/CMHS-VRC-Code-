@@ -57,6 +57,8 @@ int vectorFrontLeft = 0;
 int vectorFrontRight = 0;
 int vectorRearLeft = 0;
 int vectorRearRight = 0;
+bool isTurboEnabled = false;
+float speed = 0.5;
 
 void resetWheelVectors() {
 	vectorFrontLeft = 0;
@@ -72,7 +74,20 @@ void runWheels() {
 	motor[wheelRearRight] = vectorRearRight;
 }
 
+void moveForward(int speed) {
+	motor[wheelFrontRight] = speed;
+	motor[wheelRearLeft] = speed;
+	motor[wheelRearRight] = speed;
+}
 
+void runLift(int speed) {
+	motor[liftLeftSide] = speed;
+	motor[liftRightSide] = speed;
+}
+
+void runMobileGoalPickup(int speed) {
+	motor[mobileGoalLift] = speed;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -85,11 +100,23 @@ void runWheels() {
 /////////////////////////////////////////////////////////////////////////////////////////
 task autonomous() {
 
-	// rip
+	motor[coneClaw] = -30;
+	moveForward(65);
+	wait1Msec(2700);
+	moveForward(0);
+
+ 	runLift(127);
+ 	wait1Msec(700);
+ 	runMobileGoalPickup(-127);
+ 	wait1Msec(800);
+ 	runLift(0);
+ 	runMobileGoalPickup(0);
+
+	moveForward(65);
+	wait1Msec(700);
+	moveForward(0);
 
 }
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -107,49 +134,73 @@ while (0 == 0) // lol it looks like a face
 
 	resetWheelVectors();
 
-	vectorFrontLeft += vexRT[Ch3];
-	vectorFrontRight += vexRT[Ch3];
-	vectorRearLeft += vexRT[Ch3];
-	vectorRearRight += vexRT[Ch3];
+	if (vexRT[Btn5U] == 1) {
+		isTurboEnabled = true;
+	} else {
+		isTurboEnabled = false;
+	}
 
-	vectorFrontLeft += vexRT[Ch1];
-	vectorFrontRight -= vexRT[Ch1];
-	vectorRearLeft += vexRT[Ch1];
-	vectorRearRight -= vexRT[Ch1];
+	if (isTurboEnabled == true) {
+		speed = 1.0;
+	} else { speed = 0.5; }
+
+	vectorFrontLeft += (vexRT[Ch3])*speed;
+	vectorFrontRight += (vexRT[Ch3])*speed;
+	vectorRearLeft += (vexRT[Ch3])*speed;
+	vectorRearRight += (vexRT[Ch3])*speed;
+
+	vectorFrontLeft += (vexRT[Ch1])*speed;
+	vectorFrontRight -= (vexRT[Ch1])*speed;
+	vectorRearLeft += (vexRT[Ch1])*speed;
+	vectorRearRight -= (vexRT[Ch1])*speed;
 
 	runWheels();
 
-	if (vexRT[Btn7U] == 1) {
+
+	// LIFT ///
+	if (vexRT[Btn8LXmtr2] == 1) {
+		motor[liftLeftSide] = 127;
+		motor[liftRightSide] = -10;
+	} else if (vexRT[Btn8RXmtr2] == 1) {
+		motor[liftLeftSide] = -10;
+		motor[liftRightSide] = 127;
+	} else if (vexRT[Btn8UXmtr2] == 1) {
 		motor[liftLeftSide] = 127;
 		motor[liftRightSide] = 127;
+	} else if (vexRT[Btn8DXmtr2] == 1) {
+		motor[liftLeftSide] = -35;
+		motor[liftRightSide] = -35;
 	} else {
 		motor[liftLeftSide] = 0;
 		motor[liftRightSide] = 0;
 	}
 
-	if (vexRT[Btn5U] == 1) {
+	// CONE FLIPPER //
+	if (vexRT[Btn5UXmtr2] == 1) {
 		motor[coneFlipLeft] = 127;
 		motor[coneFlipRight] = 127;
-	} else if (vexRT[Btn5D] == 1) {
+	} else if (vexRT[Btn5DXmtr2] == 1) {
 		motor[coneFlipLeft] = -127;
 		motor[coneFlipRight] = -127;
-	} else {
+	}  else {
 		motor[coneFlipLeft] = 0;
 		motor[coneFlipRight] = 0;
 	}
 
+	// MOBILE GOAL LIFT //
 	if (vexRT[Btn8U] == 1) {
 		motor[mobileGoalLift] = 127;
-	} else if (vexRT[Btn8D] == 1) {
+	} else if (vexRT[Btn8D]) {
 		motor[mobileGoalLift] = -127;
 	} else {
 		motor[mobileGoalLift] = 0;
 	}
 
+	// THE CLAW //
 	if (vexRT[Btn6U] == 1) {
-		motor[coneClaw] = 20;
+		motor[coneClaw] = 35;
 	} else if (vexRT[Btn6D] == 1) {
-		motor[coneClaw] = -60;
+		motor[coneClaw] = -30;
 	} else {
 		motor[coneClaw] = 0;
 	}
