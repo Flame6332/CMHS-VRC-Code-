@@ -1,3 +1,9 @@
+#pragma config(Sensor, in1,    mobileGoalAngle, sensorPotentiometer)
+#pragma config(Sensor, in2,    leftLiftAngle,  sensorPotentiometer)
+#pragma config(Sensor, in3,    rightLiftAngle, sensorPotentiometer)
+#pragma config(Sensor, in4,    clawAngle,      sensorPotentiometer)
+#pragma config(Sensor, dgtl1,  leftwheel,      sensorQuadEncoder)
+#pragma config(Sensor, dgtl3,  rightwheel,     sensorQuadEncoder)
 #pragma config(Motor,  port1,           wheelRearLeft, tmotorVex393_HBridge, openLoop, reversed)
 #pragma config(Motor,  port2,           wheelFrontRight, tmotorVex393_MC29, openLoop, reversed)
 #pragma config(Motor,  port3,           mobileGoalLift, tmotorVex393_MC29, openLoop)
@@ -30,11 +36,15 @@
 // following function.
 //
 /////////////////////////////////////////////////////////////////////////////////////////
+int initialClaw = 0;
 void pre_auton() {
   // Set bStopTasksBetweenModes to false if you want to keep user created tasks running between
   // Autonomous and Tele-Op modes. You will need to manage all user created tasks if set to false.
 					bStopTasksBetweenModes = true;
 
+	initialClaw = SensorValue[clawAngle];
+	SensorValue[leftwheel] = 0;
+	SensorValue[rightwheel] = 0;
 	// All activities that occur before the competition starts
 	// Example: setting servo positions, extending arm, loading shotgun ...
     // If your robot is a Transformer(copyrighted), then transformation occurs here
@@ -59,6 +69,16 @@ int vectorRearLeft = 0;
 int vectorRearRight = 0;
 bool isTurboEnabled = false;
 float speed = 0.5;
+bool isClawToggled = false;
+bool isClawButtonJustPressed = true;
+bool isStackToggled = false;
+bool isStackButtonJustPressed = true;
+int initialLiftLeft = 1280;
+int initialLiftRight = 1254;
+float targetRightLiftHeight = initialLiftRight;
+float targetLeftLiftHeight = initialLiftLeft;
+bool isConeFlipping = false;
+bool isLiftStabalizing = true;
 
 void resetWheelVectors() {
 	vectorFrontLeft = 0;
@@ -74,10 +94,153 @@ void runWheels() {
 	motor[wheelRearRight] = vectorRearRight;
 }
 
-void moveForward(int speed) {
-	motor[wheelFrontRight] = speed;
-	motor[wheelRearLeft] = speed;
-	motor[wheelRearRight] = speed;
+int setDistanceLeft = 0;
+int setDistanceRight = 0;
+int currentSpeedLeft = 0;
+int currentSpeedRight = 0;
+//float actualSpeedLeft = 0;
+//float actualSpeedRight = 0;
+int speedAddLeftSubRight = 18;
+bool isRotating = false;
+bool isDoneMoving = true;
+
+float distanceTraveledRight = 0;
+float distanceTraveledLeft = 0;
+task driveSideLeft() {
+	int neg = 1;
+	if (setDistanceLeft < 0) { neg = -1; }
+	while ((SensorValue[leftwheel]/-360.0)*3.1416*4.25*neg < setDistanceLeft*neg) {
+		isDoneMoving = false;
+		distanceTraveledLeft = (SensorValue[leftwheel]/-360.0)*3.1416*4.25;
+		motor[wheelFrontLeft] = currentSpeedLeft;
+		motor[wheelRearLeft] = currentSpeedLeft;
+		wait1Msec(10);
+	}
+	motor[wheelFrontLeft] = 0;
+	motor[wheelRearLeft] = 0;
+	isDoneMoving = true;
+	isRotating = false;
+}
+task driveSideRight() {
+	int neg = 1;
+	if (setDistanceRight < 0) { neg = -1; }
+	while ((SensorValue[rightwheel]/-360.0)*3.1416*4.25*neg < setDistanceRight*neg) {
+		distanceTraveledRight = (SensorValue[leftwheel]/-360.0)*3.1416*4.25;
+		isDoneMoving = false;
+		motor[wheelFrontRight] = currentSpeedRight;
+		motor[wheelRearRight] = currentSpeedRight;
+		wait1Msec(10);
+	}
+	motor[wheelRearRight] = 0;
+	motor[wheelFrontRight] = 0;
+	isDoneMoving = true;
+	isRotating = false;
+}
+void moveForward(int distance, int speed) { // distance in inches
+	SensorValue[leftwheel] = 0;
+	SensorValue[rightwheel] = 0;
+	setDistanceLeft = distance;
+	setDistanceRight = distance;
+	currentSpeedLeft = speed+speedAddLeftSubRight; // accomadate for motor power difference
+	currentSpeedRight = speed-speedAddLeftSubRight;
+	if (distance < 0) { // flip speed to negative if going backwards
+		currentSpeedLeft*=-1;
+		currentSpeedRight*=-1;
+	}
+	startTask(driveSideLeft);
+	startTask(driveSideRight);
+}
+float rotationDistFactor = 0.1227;
+//float rotationDistFactor = 0.1147;
+void rotate(int degrees) {
+	SensorValue[leftwheel] = 0;
+	SensorValue[rightwheel] = 0;
+	setDistanceLeft = degrees*rotationDistFactor;
+	currentSpeedLeft = 100+speedAddLeftSubRight;
+	setDistanceRight = -1*degrees*rotationDistFactor;
+	currentSpeedRight = -100+speedAddLeftSubRight; // double negative
+	if (degrees < 0) { // wheel speed right direction if rotating negative
+		currentSpeedLeft*=-1;
+		currentSpeedRight*=-1;
+	}
+	isRotating = true;
+	startTask(driveSideLeft);
+	startTask(driveSideRight);
+}
+
+
+task stackCone() {
+	isLiftStabalizing = true;
+	isConeFlipping = true; // disable other controls
+	motor[coneFlipLeft] = 127; // start cone flipping
+	motor[coneFlipRight] = 127;
+	wait1Msec(1700);
+	motor[coneFlipLeft] = 0; // stop flipping cone
+	motor[coneFlipRight] = 0;
+	isLiftStabalizing = false;
+	motor[liftLeftSide] = -40;
+	motor[liftRightSide] = -40; // lower lift
+	wait1Msec(1000); // lift lowers for 0.5 seconds
+	motor[liftLeftSide] = 20; // stop lift
+	motor[liftRightSide] = 20;
+	isClawToggled = false; // opens claw
+	wait1Msec(600); // wait for claw to open 0.3 seconds
+	motor[liftLeftSide] = 60; // raise lift slowly
+	motor[liftRightSide] = 60;
+	wait1Msec(200); // wait for slow raise
+	motor[liftLeftSide] = 127;
+	motor[liftRightSide] = 127;
+	wait1Msec(700); // then jerk the lift up at full speed
+	isClawToggled = true; // close the claw for cone lowering
+	motor[liftLeftSide] = 0;
+	motor[liftRightSide] = 0; // stop the lift
+	isLiftStabalizing = true; // reneable lift hold
+	wait1Msec(100); //  close claw time
+	motor[coneFlipLeft] = -127; // then begin cone flipping
+	motor[coneFlipRight] = -127;
+	wait1Msec(1400); // relower flipper
+	motor[coneFlipLeft] = 0; // stop flipper
+	motor[coneFlipRight] = 0;
+	isClawToggled = false;
+	isConeFlipping = false; // flipping is done
+}
+
+void abortStackCone() {
+	motor[coneFlipLeft] = 0;
+	motor[coneFlipRight] = 0;
+	isClawToggled = true;
+	isConeFlipping = false;
+	motor[liftLeftSide] = 0;
+	motor[liftRightSide] = 0;
+}
+
+void stabalizeLift() {
+	int minHeight = 70;
+	int speedCorrectDist = 20;
+	int fineCorrectSpeed = 33;
+	int heightReachedSpeed = 5;
+	/// LEFT SIDE ///
+	if (SensorValue[leftLiftAngle] > initialLiftLeft + minHeight) { // if lift isn't down
+		if (SensorValue[leftLiftAngle] < targetLeftLiftHeight - speedCorrectDist) {
+			motor[liftLeftSide] = 127;
+		}
+		else if (SensorValue[leftLiftAngle] < targetLeftLiftHeight) {
+			motor[liftLeftSide] = fineCorrectSpeed;
+		}
+		else { motor[liftLeftSide] = heightReachedSpeed;}
+	}
+	else { motor[liftLeftSide] = 0; }
+	/// RIGHT SIDE ///
+	if (SensorValue[rightLiftAngle] > initialLiftRight + minHeight) {
+		if (SensorValue[rightLiftAngle] < targetRightLiftHeight - speedCorrectDist) {
+			motor[liftRightSide] = 127;
+		}
+		else if (SensorValue[rightLiftAngle] < targetRightLiftHeight) {
+			motor[liftRightSide] = fineCorrectSpeed;
+		}
+		else {motor[liftRightSide] = heightReachedSpeed;}
+	}
+	else { motor[liftRightSide] = 0; }
 }
 
 void runLift(int speed) {
@@ -89,6 +252,12 @@ void runMobileGoalPickup(int speed) {
 	motor[mobileGoalLift] = speed;
 }
 
+void powerWheelControl(int speed) {
+	motor[wheelFrontLeft] = speed;
+	motor[wheelFrontRight] = speed;
+	motor[wheelRearLeft] = speed;
+	motor[wheelRearRight] = speed;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -99,25 +268,59 @@ void runMobileGoalPickup(int speed) {
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 task autonomous() {
+	int side = -1; // change this variable to negative if starting on left side
+	motor[coneClaw] = -30; // initial claw pressure
 
-	motor[coneClaw] = -30;
-	moveForward(65);
-	wait1Msec(2700);
-	moveForward(0);
+	// MOVE FORWARD THEN PICK UP MOBILE BASE AND ADD CONE __________________________________
+	moveForward(65, 109); // move forward
+	runLift(127); // raise up for mobile goal
+	wait1Msec(400); // wait for lift to rise
+	runLift(10); // stop lift with bit of force
+	runMobileGoalPickup(-110); // lower mobile goal as lift falls
+	wait1Msec(500); // wait for moile goal to fall
+	runMobileGoalPickup(0); // stop mobile intake to pickup goal
+	while (isDoneMoving == false) { wait1Msec(20); } // wait for movement to complete
+	runLift(60); // raise lift as mobile goal sucked in
+	runMobileGoalPickup(127); // suck the mobile goal in while possible
+	while (SensorValue[mobileGoalAngle] < 1030) { wait1Msec(20); } // wait for mobile intake
+	runMobileGoalPickup(10); // stop intake with some pressure
+	moveForward(-64, 109); // go backwards at 100 speed with 10 inches to spare
+	runLift(-30); // lower the lift so that it lowers with cone
+	wait1Msec(1300); // wait for lift to drop
+	runLift(0); // stop lift
+	motor[coneClaw] = 30;
 
- 	runLift(127);
- 	wait1Msec(700);
- 	runMobileGoalPickup(-127);
- 	wait1Msec(800);
- 	runLift(0);
- 	runMobileGoalPickup(0);
+	// BACK UP ALL THE WAY THEN ROTATE, MOVE, ROTATE TO AIM AT SCORING ZONES _________________
+	while (isDoneMoving == false) { wait1Msec(20); }
+	rotate(-135*side); // rotate to be parallel with scoring zones
+	while (isDoneMoving == false) { wait1Msec(20); }
+	moveForward(15, 80); // move to center with scoring zones
+	while (isDoneMoving == false) { wait1Msec(20); }
+	rotate(-90*side);
+	while (isDoneMoving == false) { wait1Msec(20); }
+	wait1Msec(300); // wait to let rotation momentum calm down
 
-	moveForward(65);
-	wait1Msec(700);
-	moveForward(0);
+	// FULL SPEED AHEAD TO CROSS THE BAR OF NO RETURN!!! __________________________________
+	powerWheelControl(127); // full power!!!
+	wait1Msec(1750); // attack the bar for a sec
+	powerWheelControl(0); // stop the wheels
+	runLift(127); // raise up lift to drop mobile goal
+	wait1Msec(600);
+	runLift(25); // keep the lift erect
+	runMobileGoalPickup(-127); // chuck the mobile goal!
+	wait1Msec(900); // wait for mobile goal to be thrown in
+	powerWheelControl(-127); // get the heck out of this place!!!
+	wait1Msec(400); // give some time before sucking intake
+	runMobileGoalPickup(127); // jerk the mobile intake back!
+	wait1Msec(800); // wait for intake to rise as Mr. Robot books it
+	runMobileGoalPickup(0); // stop the intake on the way out
+	wait1Msec(1000); // wait to finish exiting the situation
+	powerWheelControl(0);
 
+
+ 	isClawToggled = true; // close claw at end for cone flipping
+	/**/
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -156,54 +359,109 @@ while (0 == 0) // lol it looks like a face
 
 	runWheels();
 
+	if (isConeFlipping == false) {
 
-	// LIFT ///
-	if (vexRT[Btn8LXmtr2] == 1) {
-		motor[liftLeftSide] = 127;
-		motor[liftRightSide] = -10;
-	} else if (vexRT[Btn8RXmtr2] == 1) {
-		motor[liftLeftSide] = -10;
-		motor[liftRightSide] = 127;
-	} else if (vexRT[Btn8UXmtr2] == 1) {
-		motor[liftLeftSide] = 127;
-		motor[liftRightSide] = 127;
-	} else if (vexRT[Btn8DXmtr2] == 1) {
-		motor[liftLeftSide] = -35;
-		motor[liftRightSide] = -35;
-	} else {
-		motor[liftLeftSide] = 0;
-		motor[liftRightSide] = 0;
+			// LIFT ///
+			if (vexRT[Btn8LXmtr2] == 1) {
+				motor[liftLeftSide] = 127;
+				motor[liftRightSide] = -60;
+				targetRightLiftHeight = SensorValue[rightLiftAngle];
+				targetLeftLiftHeight = SensorValue[leftLiftAngle];
+			} else if (vexRT[Btn8RXmtr2] == 1) {
+				motor[liftLeftSide] = -60;
+				motor[liftRightSide] = 127;
+				targetRightLiftHeight = SensorValue[rightLiftAngle];
+				targetLeftLiftHeight = SensorValue[leftLiftAngle];
+			} else if (vexRT[Btn8UXmtr2] == 1) {
+				motor[liftLeftSide] = 127;
+				motor[liftRightSide] = 127;
+				targetRightLiftHeight = SensorValue[rightLiftAngle];
+				targetLeftLiftHeight = SensorValue[leftLiftAngle];
+			} else if (vexRT[Btn8DXmtr2] == 1) {
+				motor[liftLeftSide] = -35;
+				motor[liftRightSide] = -35;
+				targetRightLiftHeight = SensorValue[rightLiftAngle];
+				targetLeftLiftHeight = SensorValue[leftLiftAngle];
+			} else {
+				stabalizeLift();
+			}
+
+			// CONE FLIPPER //
+			if (vexRT[Btn6UXmtr2] == 1) {
+				motor[coneFlipLeft] = 127;
+				motor[coneFlipRight] = 127;
+			} else if (vexRT[Btn6DXmtr2] == 1) {
+				motor[coneFlipLeft] = -127;
+				motor[coneFlipRight] = -127;
+			}  else {
+				motor[coneFlipLeft] = 0;
+				motor[coneFlipRight] = 0;
+			}
+
+			// MOBILE GOAL LIFT //
+			if (vexRT[Btn8U] == 1 && SensorValue[mobileGoalAngle] < 1030) { // raise lift
+				motor[mobileGoalLift] = 127;
+			} else if (vexRT[Btn8D] == 1) { // lower mobile goal lift if btn pressed
+				if (SensorValue[leftLiftAngle] > initialLiftLeft + 150) { // lift must be high
+					motor[mobileGoalLift] = -50; // gently place it with -50 strength5
+				} else {
+					runLift(127);
+					targetRightLiftHeight = SensorValue[rightLiftAngle];
+					targetLeftLiftHeight = SensorValue[leftLiftAngle];
+				}
+			} else {
+				motor[mobileGoalLift] = 15;
+			}
+
+			// STACK TOGGLE SYSTEM
+			if (vexRT[Btn5UXmtr2] == 1 && isStackButtonJustPressed == true) {
+				if (isStackToggled == false) {isStackToggled = true;}
+				else {isStackToggled = false;}
+				if (isClawToggled == true) {startTask(stackCone);}
+				isStackButtonJustPressed = false;
+			}
+			else if (vexRT[Btn5UXmtr2] != 1) {
+				isStackButtonJustPressed = true;
+			}
+
+	}
+	else { // if not auto adding to stack
+		if (isLiftStabalizing == true) stabalizeLift();
 	}
 
-	// CONE FLIPPER //
-	if (vexRT[Btn5UXmtr2] == 1) {
-		motor[coneFlipLeft] = 127;
-		motor[coneFlipRight] = 127;
-	} else if (vexRT[Btn5DXmtr2] == 1) {
-		motor[coneFlipLeft] = -127;
-		motor[coneFlipRight] = -127;
-	}  else {
-		motor[coneFlipLeft] = 0;
-		motor[coneFlipRight] = 0;
+	/// STACK ABORT SYSTEM
+	if (vexRT[Btn5DXmtr2] == 1) {
+			stopTask(stackCone);
+			abortStackCone();
 	}
 
-	// MOBILE GOAL LIFT //
-	if (vexRT[Btn8U] == 1) {
-		motor[mobileGoalLift] = 127;
-	} else if (vexRT[Btn8D]) {
-		motor[mobileGoalLift] = -127;
-	} else {
-		motor[mobileGoalLift] = 0;
+	// CLAW TOGGLE SYSTEM
+	if (vexRT[Btn6D] == 1 && isClawButtonJustPressed == true) {
+		if (isClawToggled == false) {isClawToggled = true;}
+		else {isClawToggled = false;}
+		isClawButtonJustPressed = false;
+	}
+	else if (vexRT[Btn6D] != 1) {
+		isClawButtonJustPressed = true;
 	}
 
 	// THE CLAW //
-	if (vexRT[Btn6U] == 1) {
-		motor[coneClaw] = 35;
-	} else if (vexRT[Btn6D] == 1) {
+	if (isClawToggled == true) {
 		motor[coneClaw] = -30;
-	} else {
+	}
+	else if (SensorValue[clawAngle] > 1700) {
+		motor[coneClaw] = 30;
+	}
+	else if (SensorValue[clawAngle] > 1615) {
+		motor[coneClaw] = 15;
+	}
+	else if (SensorValue[clawAngle] < 1615) {
+		motor[coneClaw] = -8;
+	}
+	else {
 		motor[coneClaw] = 0;
 	}
 
+	wait1Msec(20); // prevent cpu hog
 }
 }
