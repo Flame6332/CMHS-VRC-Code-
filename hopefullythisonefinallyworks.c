@@ -269,7 +269,7 @@ void powerWheelControl(int speed) {
 /////////////////////////////////////////////////////////////////////////////////////////
 task autonomous() {
 	int side = -1; // change this variable to negative if starting on left side
-	motor[coneClaw] = -30; // initial claw pressure
+	motor[coneClaw] = -100; // initial claw pressure
 
 	// MOVE FORWARD THEN PICK UP MOBILE BASE AND ADD CONE __________________________________
 	moveForward(65, 109); // move forward
@@ -447,7 +447,7 @@ while (0 == 0) // lol it looks like a face
 
 	// THE CLAW //
 	if (isClawToggled == true) {
-		motor[coneClaw] = -30;
+		motor[coneClaw] = -100;
 	}
 	else if (SensorValue[clawAngle] > 1700) {
 		motor[coneClaw] = 30;
