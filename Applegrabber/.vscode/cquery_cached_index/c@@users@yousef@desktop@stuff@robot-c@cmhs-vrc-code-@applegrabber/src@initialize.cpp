@@ -34,7 +34,7 @@ Controller controlPartner(CONTROLLER_PARTNER);
 
 bool hasCalibrated;
 
-void startTask();
+void startFlippyTask();
 
 void initialize() {
 	#include "robotconfig.h"
@@ -43,7 +43,7 @@ void initialize() {
 	pros::lcd::register_btn1_cb(on_center_button);
 
 	hasCalibrated = false;
-	startTask();
+	startFlippyTask();
 }
 
 /**

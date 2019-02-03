@@ -10,6 +10,30 @@ R1 -> Flip Cap / Manual Flipper Slap
 R2 -> Toggle Ball Intake
 
 A -> Seek And Destroy (Auto-Fire Nearest Flag)
-Y -> Manual Fire Override
+X -> Manual Fire Override
 
 Left + L2 -> Calibrate
+
+
+// TO-DO:
+
+- to mitigate damage to flipper, whenever the ball intake is
+toggled, the flipper retracts
+
+-??- "Enhanced Manual", hit X once to prime ball puncher for 2 seconds,
+slows down control for aim, hit X again to fire
+
+- if maxed out left stick horizontal direction, enable wiggle strafing,
+for lining up platforms
+
+- motor heat monitoring and warnings
+
+
+// AUTONOMOUS TO-DO:
+
+- for long programming runs, alignment with walls using accelerometer
+bump detecting to calibrate drivetrain position
+
+- prime puncher to 60% distance for faster ball shooting
+
+- move functions run 3 stage slowdown to 

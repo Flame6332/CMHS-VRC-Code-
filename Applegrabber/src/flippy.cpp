@@ -15,8 +15,8 @@ void flip() {
   isFlipping = true;
 }
 
-void updateLoop(void* param) {
-  while (666 == 666) {
+static void updateLoop(void* param) {
+  while (666) {
 
     if (isFlipping) {
       moveAtVelocity(mFlippy, 180, 10, 200);
@@ -27,7 +27,7 @@ void updateLoop(void* param) {
 
 }
 
-void startTask() {
+void startFlippyTask() {
   Task flipTask(updateLoop, (void*)"PROS", TASK_PRIORITY_DEFAULT,
                 TASK_STACK_DEPTH_DEFAULT, "flipperTask");
 }
