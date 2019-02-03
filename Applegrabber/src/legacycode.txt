@@ -1,0 +1,343 @@
+#include "robot-config.h"
+
+//Creates a competition object that allows access to Competition methods.
+vex::competition    Competition;
+
+bool isFlippyDown = false;
+bool isFlipping = false;
+bool isLifting = false;
+bool hasCalibrated = false;
+bool isFlippyBeingHeld = false;
+double nonTurboDriveSpeed = 0.4;
+double nonTurboRotationSpeed = 0.2;
+bool isInAutonomous = false;
+double currentDriveSpeed = nonTurboDriveSpeed;
+double currentRotationSpeed = nonTurboRotationSpeed;
+
+void flipCap( void ) {
+    if (hasCalibrated == false) {return;}
+    mFlippy.setTimeout(0.5, vex::timeUnits::sec);
+    isFlipping = true;
+    mFlippy.rotateTo(180,vex::rotationUnits::deg,180,vex::velocityUnits::pct, true);
+    if (Controller1.ButtonR2.pressing()) {
+        isFlippyBeingHeld = true;
+        return;
+    }
+    mFlippy.rotateTo(20,vex::rotationUnits::deg,40,vex::velocityUnits::pct, true);
+    mFlippy.stop(vex::brakeType::hold);
+    isFlipping = false;
+}
+void flipDown( void ) {
+    if (!isFlipping) {
+        mFlippy.rotateFor(0.3,vex::timeUnits::sec,-100,vex::velocityUnits::pct);
+    }
+}
+void stopFlipper( void ) {
+    mFlippy.stop(vex::brakeType::coast);
+    mFlippy.stop();
+}
+void shootBall( void ) {
+    if (hasCalibrated == false) {return;}
+    isLifting = true;
+    mLift.rotateTo(100,vex::rotationUnits::deg,100,vex::velocityUnits::pct, true);
+    mLift.stop(vex::brakeType::hold);
+    mPuncher.rotateFor(1140,vex::rotationUnits::deg,100,vex::velocityUnits::pct);
+    mLift.rotateTo(10,vex::rotationUnits::deg,100,vex::velocityUnits::pct, true);
+    mLift.stop(vex::brakeType::brake);
+    isLifting = false;
+}
+void calibrate( void ) {
+    if ((Controller1.ButtonLeft.pressing())
+         || isInAutonomous) {
+        mPuncher.resetRotation();
+        mLift.resetRotation();
+        mFlippy.resetRotation();
+        hasCalibrated = true;
+    }
+}
+bool isStoppedMoving = true;
+void moveForward(double dist, int speed) {
+    // dist in rotations
+    // speed in percent
+    isStoppedMoving = false;
+    mFrontLeft.rotateTo(dist*360,vex::rotationUnits::deg,speed,vex::velocityUnits::pct, false);
+    mFrontRight.rotateTo(dist*360,vex::rotationUnits::deg,speed,vex::velocityUnits::pct, false);
+    mBackLeft.rotateTo(dist*360,vex::rotationUnits::deg,speed,vex::velocityUnits::pct, false);
+    mBackRight.rotateTo(dist*360,vex::rotationUnits::deg,speed,vex::velocityUnits::pct, false);
+    while (mFrontLeft.isSpinning() || mFrontRight.isSpinning()
+           || mBackLeft.isSpinning() || mBackRight.isSpinning())
+            { vex::task::sleep(50);  }
+    isStoppedMoving = true;
+}
+void rotate(double dist, int speed) {
+    // dist in rotations
+    // speed in percent
+    isStoppedMoving = false;
+    mFrontLeft.rotateTo(dist*360,vex::rotationUnits::deg,speed,vex::velocityUnits::pct, false);
+    mFrontRight.rotateTo(-dist*360,vex::rotationUnits::deg,speed,vex::velocityUnits::pct, false);
+    mBackLeft.rotateTo(dist*360,vex::rotationUnits::deg,speed,vex::velocityUnits::pct, false);
+    mBackRight.rotateTo(-dist*360,vex::rotationUnits::deg,speed,vex::velocityUnits::pct, false);
+    while (mFrontLeft.isSpinning() || mFrontRight.isSpinning()
+           || mBackLeft.isSpinning() || mBackRight.isSpinning())
+            { vex::task::sleep(50);  }
+    isStoppedMoving = true;
+}
+void clearWheelEncoders(void) {
+    mFrontLeft.resetRotation();
+    mFrontRight.resetRotation();
+    mBackLeft.resetRotation();
+    mBackRight.resetRotation();
+}
+/*void waitUntilStoppedMoving(void) {
+    while(isStoppedMoving==false) {vex::task::sleep(50);}
+}*/
+
+/*                          Pre-Autonomous Functions                         */
+/*                                                                           */
+/*  You may want to perform some actions before the competition starts.      */
+/*  Do them in the following function.  You must return from this function   */
+/*  or the autonomous and usercontrol tasks will not be started.  This       */
+/*  function is only called once after the cortex has been powered on and    */
+/*  not every time that the robot is disabled.                               */
+/*---------------------------------------------------------------------------*/
+
+void pre_auton( void ) {
+  // All activities that occur before the competition starts
+  // Example: clearing encoders, setting servo positions, ...
+
+  if (Controller1.ButtonL2.pressing() && Controller1.ButtonLeft.pressing()) {
+      mPuncher.resetRotation();
+      mLift.resetRotation();
+   }
+}
+
+
+//////
+
+void shootBallMoveForwards( void ) {
+    mFlippy.rotateFor(0.3,vex::timeUnits::sec,-100,vex::velocityUnits::pct);
+    vex::task::sleep(100);
+    calibrate();
+    vex::task::sleep(100);
+    shootBall();
+    vex::task::sleep(4000);
+    moveForward(-3.4, 40);
+    moveForward(0, 50);
+}
+
+void wayneFarFlag( void ) {
+    rotate(-0.4, 40);
+        vex::task::sleep(2000);
+
+    moveForward(-1.2,50);
+    mFlippy.rotateFor(0.3,vex::timeUnits::sec,-100,vex::velocityUnits::pct);
+    calibrate();
+
+    rotate(-0.47, 40);
+        vex::task::sleep(3500);
+    shootBall();
+    /*mFlippy.rotateTo(180,vex::rotationUnits::deg,180,vex::velocityUnits::pct, true);
+    mFlippy.stop(vex::brakeType::brake);
+    rotate(-1, 100);
+        //vex::task::sleep(1200);
+    while(isStoppedMoving==false) {vex::task::sleep(50);}
+        /////moveForward(2, 95);
+    clearWheelEncoders();
+    mFrontLeft.rotateFor(2*360,vex::rotationUnits::deg,100,vex::velocityUnits::pct, false);
+    mFrontRight.rotateFor(2*360,vex::rotationUnits::deg,100,vex::velocityUnits::pct, false);
+
+    while(isStoppedMoving==false) {vex::task::sleep(50);}
+    clearWheelEncoders();
+    mFrontLeft.rotateFor(-2*360,vex::rotationUnits::deg,100,vex::velocityUnits::pct, false);
+    mFrontRight.rotateFor(-2*360,vex::rotationUnits::deg,100,vex::velocityUnits::pct, false);
+
+    vex::task::sleep(1000);
+    /////while(isStoppedMoving==false) {vex::task::sleep(50);}
+    //////moveForward(-1, 80);*/
+}
+
+void red(void) {
+
+    moveForward(-3.4, 40);
+    while(isStoppedMoving==false) {vex::task::sleep(50);}
+    moveForward(-1, 50);
+    //mFlippy.rotateFor(0.3,vex::timeUnits::sec,-100,vex::velocityUnits::pct);
+    calibrate();
+
+}
+
+int RED = 1;
+int BLUE = -1;
+
+void inside6Pt(int color) {
+    // Shoot -> Move Forwards -> Ram Bottom Flag -> Return -> Pull Up Flipper -> Rotate 90
+    // -> Drive Forwards ->Turn On Intake -> Knock Cap Off Ball While Intaking
+    mFlippy.rotateFor(0.3,vex::timeUnits::sec,-100,vex::velocityUnits::pct); // Flip Down Cap
+    mFlippy.setTimeout(0.5, vex::timeUnits::sec);
+    vex::task::sleep(20);
+    mFlippy.stop(vex::brakeType::coast);
+    calibrate();
+    vex::task::sleep(10);
+    shootBall();
+    vex::task::sleep(1100);
+    mIntake.rotateTo(-13000,vex::rotationUnits::deg,100,vex::velocityUnits::pct, false);
+    if (color == BLUE) {rotate(-0.14*color, 90);}
+    else {rotate(-0.09*color, 90);}
+    moveForward(-3.2, 90);
+    mFlippy.rotateTo(160,vex::rotationUnits::deg,100,vex::velocityUnits::pct, true);
+    if (color == BLUE) {
+        clearWheelEncoders();
+        rotate(0.1*color, 90);
+    }
+    clearWheelEncoders();
+    moveForward(3.20, 90);
+
+    clearWheelEncoders();
+    rotate(1*color, 80);
+    clearWheelEncoders();
+    moveForward(-3, 90);
+    moveForward(-0.6, 50);
+    moveForward(0, 90);
+    clearWheelEncoders();
+    rotate(-1*color, 90);
+    clearWheelEncoders();
+    moveForward(-2.2, 80);
+    mIntake.stop();
+    shootBall();
+
+    mFlippy.rotateFor(0.2,vex::timeUnits::sec,-100,vex::velocityUnits::pct);
+    clearWheelEncoders();
+    rotate(-1.05*color, 90);
+    moveForward(1, 90);
+    mFlippy.rotateTo(180,vex::rotationUnits::deg,180,vex::velocityUnits::pct, true);
+
+}
+
+/////
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              Autonomous Task                              */
+/*                                                                           */
+/*  This task is used to control your robot during the autonomous phase of   */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+
+void autonomous( void ) {
+  isInAutonomous = true;
+  // ..........................................................................
+  // Insert autonomous user code here.
+  // ..........................................................................
+   //wayneFarFlag();
+   //red();
+   inside6Pt(BLUE);
+  isInAutonomous = false;
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              User Control Task                            */
+/*                                                                           */
+/*  This task is used to control your robot during the user control phase of */
+/*  a VEX Competition.                                                       */
+/*---------------------------------------------------------------------------*/
+
+void usercontrol( void ) {
+  // User control code here, inside the loop
+
+  Controller1.ButtonR2.pressed(flipCap);
+  Controller1.ButtonA.pressed(shootBall);
+  Controller1.ButtonL2.pressed(calibrate);
+  Controller1.ButtonDown.pressed(flipDown);
+  Controller1.ButtonX.pressed(stopFlipper);
+      calibrate();
+
+  while (666) {
+    // This is the main execution loop for the user control program.
+    // Each time through the loop your program should update motor + servo values based on feedback from the joysticks.
+
+      if (Controller1.ButtonL2.pressing()) {
+          currentDriveSpeed = 1.0;
+          currentRotationSpeed = 1.0;
+      } else {
+          currentDriveSpeed = nonTurboDriveSpeed;
+          currentRotationSpeed = nonTurboRotationSpeed;
+      }
+
+
+    mFrontLeft.spin(vex::directionType::fwd, (Controller1.Axis3.value()*currentDriveSpeed + Controller1.Axis1.value()*currentRotationSpeed),vex::velocityUnits::pct);
+    mBackLeft.spin(vex::directionType::fwd, (Controller1.Axis3.value()*currentDriveSpeed + Controller1.Axis1.value()*currentRotationSpeed),vex::velocityUnits::pct);
+
+    mFrontRight.spin(vex::directionType::fwd, (Controller1.Axis3.value()*currentDriveSpeed - Controller1.Axis1.value()*currentRotationSpeed), vex::velocityUnits::pct);
+    mBackRight.spin(vex::directionType::fwd, (Controller1.Axis3.value()*currentDriveSpeed - Controller1.Axis1.value()*currentRotationSpeed), vex::velocityUnits::pct);
+
+    if (Controller2.ButtonR1.pressing() || Controller1.ButtonR1.pressing()) {
+        mIntake.spin(vex::directionType::rev, 100., vex::velocityUnits::pct);
+    } else if (Controller2.ButtonR2.pressing()) {
+        mIntake.spin(vex::directionType::fwd, 50., vex::velocityUnits::pct);
+    } else {
+        mIntake.stop(vex::brakeType::coast);
+    }
+
+    if (isFlippyBeingHeld) {
+        if (!Controller1.ButtonR2.pressing()) {
+            mFlippy.rotateTo(20,vex::rotationUnits::deg,90,vex::velocityUnits::pct, true);
+            mFlippy.stop(vex::brakeType::hold);
+            isFlipping = false;
+            isFlippyBeingHeld = false;
+        }
+    }
+
+      if  (isLifting == false) {
+    if (Controller2.ButtonUp.pressing() && Controller1.ButtonR1.pressing()) {
+        mLift.spin(vex::directionType::fwd, 100., vex::velocityUnits::pct);
+    } else if (Controller2.ButtonDown.pressing()) {
+        mLift.spin(vex::directionType::rev, 50., vex::velocityUnits::pct);
+    } else {
+        mLift.stop(vex::brakeType::brake);
+    }  }
+
+      if (isFlipping == false) {
+    if (Controller2.ButtonA.pressing()) {
+        mFlippy.spin(vex::directionType::fwd, 80., vex::velocityUnits::pct);
+    } else if (Controller2.ButtonB.pressing()) {
+        mFlippy.spin(vex::directionType::rev, 30., vex::velocityUnits::pct);
+    } else {
+        mFlippy.stop(vex::brakeType::brake);
+    } /**/ }
+
+      //Brain.Screen.newLine();
+    //Brain.Screen.print());
+      //Brain.Screen.printAt(1,40,mFlippy.rotation(vex::rotationUnits::deg));
+
+    vex::task::sleep(20); //Sleep the task for a short amount of time to prevent wasted resources.
+  }
+}
+
+//
+// Main will set up the competition functions and callbacks.
+//
+int main() {
+
+    //Run the pre-autonomous function.
+    pre_auton();
+
+    //Set up callbacks for autonomous and driver control periods.
+    Competition.autonomous( autonomous );
+    Competition.drivercontrol( usercontrol );
+
+    //Prevent main from exiting with an infinite loop.
+    while(666) {
+
+        vex::task::sleep(100);//Sleep the task for a short amount of time to prevent wasted resources.
+
+    }
+
+}
+
+/*
+Coast - do nothing like 393s always did
+brake - short the wires together but don't send any additional electricity into the system
+hold - actively use PID to maintain the set position
+*/

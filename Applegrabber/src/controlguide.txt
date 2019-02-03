@@ -1,0 +1,15 @@
+:::::::MASTER:::::::
+
+Left Stick -> Forwards/Backwards Drive
+Right Stick -> Rotation Drive
+
+L2 -> Turbo
+L1 -> Lift Lift
+
+R1 -> Flip Cap / Manual Flipper Slap
+R2 -> Toggle Ball Intake
+
+A -> Seek And Destroy (Auto-Fire Nearest Flag)
+Y -> Manual Fire Override
+
+Left + L2 -> Calibrate

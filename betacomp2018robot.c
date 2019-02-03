@@ -1,3 +1,5 @@
+#pragma config(Sensor, dgtl1,  sonarLeft,      sensorSONAR_inch)
+#pragma config(Sensor, dgtl3,  sonarRight,     sensorSONAR_inch)
 #pragma config(Motor,  port1,           wheelFrontLeft, tmotorVex393_HBridge, openLoop)
 #pragma config(Motor,  port2,           wheelFrontRight, tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port3,           wheelRearLeft, tmotorVex393_MC29, openLoop)
@@ -28,8 +30,8 @@ int vectorFrontRight = 0;
 int vectorRearLeft = 0;
 int vectorRearRight = 0;
 
-int clawGrabPressure = -20; // set this to a value between [0 to -127]
-int clawReleasePressure = 10; // set this to a value between [0 to 127]
+int clawGrabPressure = -127; // set this to a value between [0 to -127]
+int clawReleasePressure = 100; // set this to a value between [0 to 127]
 
 
 void resetWheelVectors() {
