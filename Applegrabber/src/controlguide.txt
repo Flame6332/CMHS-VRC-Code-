@@ -1,16 +1,18 @@
 :::::::MASTER:::::::
 
-Left Stick -> Forwards/Backwards Drive
-Right Stick -> Rotation Drive
+Left Stick Y -> Forwards/Backwards Drive
+Left Stick X -> Wiggle Strafe
+Right Stick X -> Rotation Drive
 
 L2 -> Turbo
 L1 -> Lift Lift
 
-R1 -> Flip Cap / Manual Flipper Slap
-R2 -> Toggle Ball Intake
+R1 -> Flip Cap / Hold For Flipper Slap / Auto-enable Flipper On-Click
+R2 -> Toggle Flipper
 
 A -> Seek And Destroy (Auto-Fire Nearest Flag)
 X -> Manual Fire Override
+B -> Toggle Ball Intake (Auto-enabled At Start-up)
 
 Left + L2 -> Calibrate
 
