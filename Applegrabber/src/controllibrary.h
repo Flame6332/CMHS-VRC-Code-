@@ -6,5 +6,6 @@ using namespace pros;
 using namespace std;
 
 void moveAtVelocity(Motor, int, int, int);
+void stopMotor(Motor);
 
 #endif

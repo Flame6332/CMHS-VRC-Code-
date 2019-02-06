@@ -30,7 +30,7 @@ static void updateLoop(void* param) {
       else {moveAtVelocity(mFlippy, 15, 10, 100);}
       isFlipping = false;
     }
-    delay(8); // response time
+    delay(6); // response time
   }
 
 }

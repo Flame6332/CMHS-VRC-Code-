@@ -1,6 +1,7 @@
 #include "main.h"
 #include "robotstate.h"
 #include "robotconfig.h"
+#include "controllibrary.h"
 
 using namespace std;
 using namespace pros;
@@ -21,6 +22,7 @@ using namespace pros;
 
 void calibrate();
 void flip();
+void manualFire();
 
 void opcontrol() {
 	int PARTYTIME = 420;
@@ -29,11 +31,6 @@ void opcontrol() {
  	float currentSpeed = nonTurboSpeed;
 	int vertical, horizontal;
 	float averageDriveSpeed;
-
-	//int rumbleFrameCount;
-	//bool shouldRumble = false;
-	//bool isRumbling = false;
-
 
 	controlPartner.print(0, 4, "poopy");
 
@@ -58,14 +55,20 @@ void opcontrol() {
 
 
 		if (controlMaster.get_digital(DIGITAL_L2) &&
-				controlMaster.get_digital(DIGITAL_LEFT)) {
-					calibrate();
-		}
+						controlMaster.get_digital(DIGITAL_LEFT)) { calibrate(); }
 
 
-		if (controlMaster.get_digital_new_press(DIGITAL_R2)) {
-			flip();
+		if (controlMaster.get_digital_new_press(DIGITAL_R2)) { flip(); }
+		if (controlMaster.get_digital_new_press(DIGITAL_R2)) { manualFire(); }
+
+
+
+		if (!isFiring) {
+			if (controlMaster.get_digital(DIGITAL_L1)) { mLift.move_velocity(200); }
+			else if (mLift.get_position() > 20) { mLift.move_velocity(-200); }
+			else { mLift.set_brake_mode(MOTOR_BRAKE_BRAKE); stopMotor(mLift); }
 		}
+
 
 
 		delay(25);
@@ -75,7 +78,15 @@ void opcontrol() {
 
 // Motor RPM +-200
 
-/*averageDriveSpeed = ( abs(mFrontLeft.get_actual_velocity()) +
+/*
+
+	//int rumbleFrameCount;
+	//bool shouldRumble = false;
+	//bool isRumbling = false;
+
+
+
+averageDriveSpeed = ( abs(mFrontLeft.get_actual_velocity()) +
 	abs(mBackLeft.get_actual_velocity()) +
 	abs(mFrontRight.get_actual_velocity()) +
 	abs(mBackRight.get_actual_velocity()) ) / 4;

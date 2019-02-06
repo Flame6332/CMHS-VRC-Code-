@@ -7,6 +7,11 @@ using namespace std;
 using namespace pros;
 
 
+
+void stopMotor(Motor motor) {
+  motor.move_velocity(0);
+}
+
 void moveAtVelocity(Motor motor, int target, int tolerance, int rpm) {
   motor.move_absolute(target, rpm);
   while (!( (motor.get_position() < target+(tolerance*2)) && (mFlippy.get_position() > target-(tolerance*2)) )) {
@@ -15,4 +20,5 @@ void moveAtVelocity(Motor motor, int target, int tolerance, int rpm) {
   while (!( (motor.get_position() < target+tolerance) && (mFlippy.get_position() > target-tolerance) )) {
     pros::delay(tolerance); // delay loop with increased accuracy
   }
+  stopMotor(motor);
 }

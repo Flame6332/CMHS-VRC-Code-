@@ -19,8 +19,8 @@ Left + L2 -> Calibrate
 
 // TO-DO:
 
-- to mitigate damage to flipper, whenever the ball intake is
-toggled, the flipper retracts
+- Whenever turbo fast rotation takes place, if hasn't flipped in a couple
+seconds, toggle flipper
 
 -??- "Enhanced Manual", hit X once to prime ball puncher for 2 seconds,
 slows down control for aim, hit X again to fire

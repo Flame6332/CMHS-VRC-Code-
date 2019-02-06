@@ -290,7 +290,7 @@ void usercontrol( void ) {
     }
 
       if  (isLifting == false) {
-    if (Controller2.ButtonUp.pressing() && Controller1.ButtonR1.pressing()) {
+    if (Controller2.ButtonUp.pressing() || Controller1.ButtonL1.pressing()) {
         mLift.spin(vex::directionType::fwd, 100., vex::velocityUnits::pct);
     } else if (Controller2.ButtonDown.pressing()) {
         mLift.spin(vex::directionType::rev, 50., vex::velocityUnits::pct);
