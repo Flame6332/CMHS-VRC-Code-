@@ -7,6 +7,12 @@ using namespace std;
 using namespace pros;
 
 
+void resetWheelEncoders() {
+  mFrontLeft.tare_position();
+  mFrontRight.tare_position();
+  mBackLeft.tare_position();
+  mBackRight.tare_position();
+}
 
 void stopMotor(Motor motor) {
   motor.move_velocity(0);
@@ -21,4 +27,140 @@ void moveAtVelocity(Motor motor, int target, int tolerance, int rpm) {
     pros::delay(tolerance); // delay loop with increased accuracy
   }
   stopMotor(motor);
+}
+
+/// AUTONOMOUS ONLY FUNCTIONS ///
+
+static float wheelDiameter = 4.13;
+// converts inches to degrees of rotation
+static float distToWheelRot(float distance) {
+  return (distance / (wheelDiameter * 3.141592654)) * 360;
+}
+
+static void setMovementVelocity(float);
+
+static bool isDoneMoving = true;
+static float currentMaxStoppingSpeed = 0;
+// absolute rotational distance in drive, and absolute rot dist in rotate function
+static float generalAbsoluteWheelRotationTarget = 0;
+
+static float accelerationDistance = 0;
+static float accelerationWheelRot = distToWheelRot(accelerationDistance);
+static float deccelerationDistance = 0;
+static float deccelerationWheelRot = distToWheelRot(deccelerationDistance);
+static float accelerationFactor = 0.5; // deccel too
+
+static float currentLeftSideMotorTarget = 0;
+static float currentRightSideMotorTarget = 0;
+static float currentSetSpeed = 0;
+static bool isRotating = false;
+
+void drive(float distance, float maxStoppingSpeed, float accelerationDist, float deccelerationDist, float speed) {
+  while (!isDoneMoving) {
+    delay(3); // delay execution until previous movement complete
+  }
+  resetWheelEncoders();
+  isRotating = false;
+  float target = distToWheelRot(distance);
+  generalAbsoluteWheelRotationTarget = abs(target);
+  currentMaxStoppingSpeed = maxStoppingSpeed; //targetToler;
+  currentLeftSideMotorTarget = target;
+  currentRightSideMotorTarget = target;
+  currentSetSpeed = speed;
+  accelerationDistance = accelerationDist;
+  accelerationWheelRot = distToWheelRot(accelerationDistance);
+  deccelerationDistance = deccelerationDist;
+  deccelerationWheelRot = distToWheelRot(deccelerationDistance);
+  mFrontLeft.move_absolute(target, speed);
+  mFrontRight.move_absolute(target, speed);
+  mBackLeft.move_absolute(target, speed);
+  mBackRight.move_absolute(target, speed);
+  isDoneMoving = false;
+}
+void rotate(float rotationDistance, float maxStoppingSpeed, float accelerationDist, float deccelerationDist, float speed) {
+  while (!isDoneMoving) {
+    delay(3); // delay execution until previous movement complete
+  }
+  resetWheelEncoders();
+  isRotating = true;
+  float rotationalConst = 4.2;
+  float target = rotationDistance * rotationalConst;
+  generalAbsoluteWheelRotationTarget = abs(target);
+  currentMaxStoppingSpeed = maxStoppingSpeed; //targetToler;
+  currentLeftSideMotorTarget = target;
+  currentRightSideMotorTarget = -target;
+  currentSetSpeed = speed;
+  accelerationDistance = 0;
+  accelerationWheelRot = accelerationDist*rotationalConst;
+  deccelerationDistance = 0;
+  deccelerationWheelRot = deccelerationDist*rotationalConst;
+  mFrontLeft.move_absolute(target, speed);
+  mFrontRight.move_absolute(-target, speed);
+  mBackLeft.move_absolute(target, speed);
+  mBackRight.move_absolute(-target, speed);
+  isDoneMoving = false;
+}
+
+static float averageAbsoluteVelocity() {
+  float fL =  abs( mFrontLeft.get_actual_velocity() );
+  float fR =  abs( mFrontRight.get_actual_velocity() );
+  float bL =  abs( mBackLeft.get_actual_velocity() );
+  float bR =  abs( mBackRight.get_actual_velocity() );
+  return ( fL + fR + bL + bR ) / 4;
+}
+static float averageAbsoluteTargetPositionError() {
+  float fLErr =  abs( mFrontLeft.get_position() - mFrontLeft.get_target_position() );
+  float fRErr =  abs( mFrontRight.get_position() - mFrontRight.get_target_position() );
+  float bLErr =  abs( mBackLeft.get_position() - mBackLeft.get_target_position() );
+  float bRErr =  abs( mBackRight.get_position() - mBackRight.get_target_position() );
+  return ( fLErr + fRErr + bLErr + bRErr ) / 4;
+}
+static float averageAbsolutePosition() {
+  float fL =  abs( mFrontLeft.get_position() ); // front left
+  float fR =  abs( mFrontRight.get_position() );
+  float bL =  abs( mBackLeft.get_position() );
+  float bR =  abs( mBackRight.get_position() );
+  return ( fL + fR + bL + bR ) / 4;
+}
+
+static void setMovementVelocity(float rpm) {
+  mFrontRight.move_absolute(currentRightSideMotorTarget, rpm);
+  mBackRight.move_absolute(currentRightSideMotorTarget, rpm);
+  mFrontLeft.move_absolute(currentLeftSideMotorTarget, rpm);
+  mBackLeft.move_absolute(currentLeftSideMotorTarget, rpm);
+}
+
+static bool shouldBeAccelerating() {
+  if (averageAbsolutePosition() < accelerationWheelRot ||
+  averageAbsolutePosition() > (generalAbsoluteWheelRotationTarget - deccelerationWheelRot) ) {
+      return true;
+    }
+  else {return false;}
+}
+
+static void updateLoop(void* param) {
+  while (69) {
+    if (!isDoneMoving) {
+      while (5318008) {
+
+        if (shouldBeAccelerating()) {setMovementVelocity(accelerationFactor*currentSetSpeed);}
+        else {setMovementVelocity(currentSetSpeed);}
+        // if acceptably stopped and atleast 80% of the way to the target, then consider if stopped moving
+        // this was added because the robot backed into my feet because it assumed it was done at the first move,
+        // since it was stopped moving at the beginning.
+        if (averageAbsoluteVelocity() < currentMaxStoppingSpeed
+            && (averageAbsoluteTargetPositionError() / generalAbsoluteWheelRotationTarget) < 0.20) {
+          isDoneMoving = true;
+        }
+
+        delay(4);
+      }
+    }
+    delay(10);
+  }
+}
+
+void startAutonomousMovementTask() {
+  Task autonMoveTask(updateLoop, (void*)"PROS", TASK_PRIORITY_DEFAULT,
+                TASK_STACK_DEPTH_DEFAULT, "autonMoveTask");
 }

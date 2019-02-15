@@ -27,9 +27,11 @@ void manualFire();
 void opcontrol() {
 	int PARTYTIME = 420;
 
-	float nonTurboSpeed = 0.3;
- 	float currentSpeed = nonTurboSpeed;
-	int vertical, horizontal;
+	float nonTurboDriveSpeed = 0.6;
+	float nonTurboRotationSpeed = 0.55;
+ 	float currentDriveSpeed = nonTurboDriveSpeed;
+ 	float currentRotationSpeed = nonTurboRotationSpeed;
+	float vertical, horizontal;
 	float averageDriveSpeed;
 
 	controlPartner.print(0, 4, "poopy");
@@ -43,15 +45,18 @@ void opcontrol() {
 
 
 		if (controlMaster.get_digital(DIGITAL_L2)) {
-			currentSpeed = 1.0; // turbo
-		} else { currentSpeed = nonTurboSpeed; }
+			currentDriveSpeed = 1.0; // turbo
+			currentRotationSpeed = 1.0; // turbo
+		} else {
+			currentDriveSpeed = nonTurboDriveSpeed;
+			currentRotationSpeed = nonTurboRotationSpeed; }
 			// STICK DRIVE CONTROLS
-		vertical = controlMaster.get_analog(ANALOG_LEFT_Y);
-		horizontal = controlMaster.get_analog(ANALOG_RIGHT_X);
-			mFrontLeft.move( (vertical+horizontal)*currentSpeed );
-			mBackLeft.move( (vertical+horizontal)*currentSpeed );
-			mFrontRight.move( (vertical-horizontal)*currentSpeed );
-			mBackRight.move( (vertical-horizontal)*currentSpeed );
+		vertical = controlMaster.get_analog(ANALOG_LEFT_Y) * currentDriveSpeed;
+		horizontal = controlMaster.get_analog(ANALOG_RIGHT_X) * currentRotationSpeed;
+			mFrontLeft.move( vertical + horizontal );
+			mBackLeft.move( vertical + horizontal );
+			mFrontRight.move( vertical - horizontal );
+			mBackRight.move( vertical - horizontal );
 
 
 		if (controlMaster.get_digital(DIGITAL_L2) &&
@@ -65,7 +70,7 @@ void opcontrol() {
 
 		if (!isFiring) {
 			if (controlMaster.get_digital(DIGITAL_L1)) { mLift.move_velocity(200); }
-			else if (mLift.get_position() > 20) { mLift.move_velocity(-200); }
+			else if (mLift.get_position() > 20) { mLift.move_velocity(-100); }
 			else { mLift.set_brake_mode(MOTOR_BRAKE_BRAKE); stopMotor(mLift); }
 		}
 

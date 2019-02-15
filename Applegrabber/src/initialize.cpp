@@ -43,17 +43,28 @@ void calibrate() {
 
 void startFlippyTask();
 void startFiringTask();
+void startAutonomousMovementTask();
 
 void initialize() {
-	#include "robotconfig.h"
+
 	pros::lcd::initialize();
 	pros::lcd::set_text(1, "Hello PROS User!");
 	pros::lcd::register_btn1_cb(on_center_button);
+
+	mFrontLeft.set_encoder_units(MOTOR_ENCODER_DEGREES);
+	mFrontRight.set_encoder_units(MOTOR_ENCODER_DEGREES);
+	mBackLeft.set_encoder_units(MOTOR_ENCODER_DEGREES);
+	mBackRight.set_encoder_units(MOTOR_ENCODER_DEGREES);
+	mIntake.set_encoder_units(MOTOR_ENCODER_DEGREES);
+	mPuncher.set_encoder_units(MOTOR_ENCODER_DEGREES);
+	mFlippy.set_encoder_units(MOTOR_ENCODER_DEGREES);
+	mLift.set_encoder_units(MOTOR_ENCODER_DEGREES);
 
 	hasCalibrated = false;
 	mFlippy.set_brake_mode(E_MOTOR_BRAKE_BRAKE);
 	startFlippyTask();
 	startFiringTask();
+	startAutonomousMovementTask();
 }
 
 /**
