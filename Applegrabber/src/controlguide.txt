@@ -14,6 +14,8 @@ A -> Seek And Destroy (Auto-Fire Nearest Flag)
 X -> Manual Fire Override
 B -> Toggle Ball Intake (Auto-enabled At Start-up)
 
+Up Arrow -> Dry fire correction (increases ball count by one)
+
 Left + L2 -> Calibrate
 
 

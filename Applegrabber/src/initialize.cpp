@@ -24,9 +24,9 @@ void on_center_button() {
  Motor mBackLeft(3);
  Motor mBackRight(4, true);
 
- Motor mIntake(5);
+ Motor mIntake(5, true);
  Motor mPuncher(6);
- Motor mFlippy(18, true);
+ Motor mFlippy(17, true);
  Motor mLift(8, true);
 
  Controller controlMaster(CONTROLLER_MASTER);
@@ -60,7 +60,11 @@ void initialize() {
 	mFlippy.set_encoder_units(MOTOR_ENCODER_DEGREES);
 	mLift.set_encoder_units(MOTOR_ENCODER_DEGREES);
 
-	hasCalibrated = false;
+	mLift.tare_position();
+	mPuncher.tare_position();
+	mFlippy.set_zero_position(190);
+	hasCalibrated = true;
+
 	mFlippy.set_brake_mode(E_MOTOR_BRAKE_BRAKE);
 	startFlippyTask();
 	startFiringTask();

@@ -9,10 +9,21 @@ using namespace pros;
 
 
 bool isFlipping = false;
+bool isRetracted = true;
+bool shouldToggleUpdate = false;
 
 void flip() {
   if (!hasCalibrated) {return;}
   isFlipping = true;
+}
+
+void toggleFlippy() {
+  if (isRetracted) {
+    isRetracted = false;
+  }
+  else {
+    isRetracted = true;
+  }
 }
 
 static void updateLoop(void* param) {

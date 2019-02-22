@@ -6,7 +6,6 @@
 using namespace std;
 using namespace pros;
 
-
 void resetWheelEncoders() {
   mFrontLeft.tare_position();
   mFrontRight.tare_position();
@@ -20,13 +19,23 @@ void stopMotor(Motor motor) {
 
 void moveAtVelocity(Motor motor, int target, int tolerance, int rpm) {
   motor.move_absolute(target, rpm);
-  while (!( (motor.get_position() < target+(tolerance*2)) && (mFlippy.get_position() > target-(tolerance*2)) )) {
+  while (!( (motor.get_position() < target+(tolerance*2)) && (motor.get_position() > target-(tolerance*2)) )) {
     pros::delay(tolerance*2); // delay loop until increased accuracy
   }
-  while (!( (motor.get_position() < target+tolerance) && (mFlippy.get_position() > target-tolerance) )) {
+  while (!( (motor.get_position() < target+tolerance) && (motor.get_position() > target-tolerance) )) {
     pros::delay(tolerance); // delay loop with increased accuracy
   }
   stopMotor(motor);
+}
+
+void moveAtVelocityNoStop(Motor motor, int target, int tolerance, int rpm) {
+  motor.move_absolute(target, rpm);
+  while (!( (motor.get_position() < target+(tolerance*2)) && (motor.get_position() > target-(tolerance*2)) )) {
+    pros::delay(tolerance*2); // delay loop until increased accuracy
+  }
+  while (!( (motor.get_position() < target+tolerance) && (motor.get_position() > target-tolerance) )) {
+    pros::delay(tolerance); // delay loop with increased accuracy
+  }
 }
 
 /// AUTONOMOUS ONLY FUNCTIONS ///
@@ -63,7 +72,7 @@ void drive(float distance, float maxStoppingSpeed, float accelerationDist, float
   isRotating = false;
   float target = distToWheelRot(distance);
   generalAbsoluteWheelRotationTarget = abs(target);
-  currentMaxStoppingSpeed = maxStoppingSpeed; //targetToler;
+  currentMaxStoppingSpeed = maxStoppingSpeed;
   currentLeftSideMotorTarget = target;
   currentRightSideMotorTarget = target;
   currentSetSpeed = speed;
@@ -83,10 +92,10 @@ void rotate(float rotationDistance, float maxStoppingSpeed, float accelerationDi
   }
   resetWheelEncoders();
   isRotating = true;
-  float rotationalConst = 4.2;
+  float rotationalConst = 3.8;
   float target = rotationDistance * rotationalConst;
   generalAbsoluteWheelRotationTarget = abs(target);
-  currentMaxStoppingSpeed = maxStoppingSpeed; //targetToler;
+  currentMaxStoppingSpeed = maxStoppingSpeed;
   currentLeftSideMotorTarget = target;
   currentRightSideMotorTarget = -target;
   currentSetSpeed = speed;
@@ -109,10 +118,10 @@ static float averageAbsoluteVelocity() {
   return ( fL + fR + bL + bR ) / 4;
 }
 static float averageAbsoluteTargetPositionError() {
-  float fLErr =  abs( mFrontLeft.get_position() - mFrontLeft.get_target_position() );
-  float fRErr =  abs( mFrontRight.get_position() - mFrontRight.get_target_position() );
-  float bLErr =  abs( mBackLeft.get_position() - mBackLeft.get_target_position() );
-  float bRErr =  abs( mBackRight.get_position() - mBackRight.get_target_position() );
+  float fLErr =  abs( mFrontLeft.get_position() - currentLeftSideMotorTarget );
+  float bLErr =  abs( mBackLeft.get_position() - currentLeftSideMotorTarget );
+  float fRErr =  abs( mFrontRight.get_position() - currentRightSideMotorTarget );
+  float bRErr =  abs( mBackRight.get_position() - currentRightSideMotorTarget );
   return ( fLErr + fRErr + bLErr + bRErr ) / 4;
 }
 static float averageAbsolutePosition() {
@@ -130,6 +139,18 @@ static void setMovementVelocity(float rpm) {
   mBackLeft.move_absolute(currentLeftSideMotorTarget, rpm);
 }
 
+void ramForMiliseconds(int velocity, int miliseconds) {
+  mFrontRight.move_velocity(velocity);
+  mBackRight.move_velocity(velocity);
+  mFrontLeft.move_velocity(velocity);
+  mBackLeft.move_velocity(velocity);
+  delay(miliseconds);
+  mFrontRight.move_velocity(0);
+  mBackRight.move_velocity(0);
+  mFrontLeft.move_velocity(0);
+  mBackLeft.move_velocity(0);
+}
+
 static bool shouldBeAccelerating() {
   if (averageAbsolutePosition() < accelerationWheelRot ||
   averageAbsolutePosition() > (generalAbsoluteWheelRotationTarget - deccelerationWheelRot) ) {
@@ -140,8 +161,8 @@ static bool shouldBeAccelerating() {
 
 static void updateLoop(void* param) {
   while (69) {
-    if (!isDoneMoving) {
-      while (5318008) {
+    while (!isDoneMoving) {
+
 
         if (shouldBeAccelerating()) {setMovementVelocity(accelerationFactor*currentSetSpeed);}
         else {setMovementVelocity(currentSetSpeed);}
@@ -150,13 +171,27 @@ static void updateLoop(void* param) {
         // since it was stopped moving at the beginning.
         if (averageAbsoluteVelocity() < currentMaxStoppingSpeed
             && (averageAbsoluteTargetPositionError() / generalAbsoluteWheelRotationTarget) < 0.20) {
+              /*printf("AverageAbsoluteVelocity: %.3f \n", averageAbsoluteVelocity());
+              printf("CurrentMaxStoppingSpeed: %.3f \n", currentMaxStoppingSpeed);
+              printf("AverageAbsoluteTargetPositionError: %.3f \n", averageAbsoluteTargetPositionError());
+              printf("generalAbsoluteWheelRotationTarget: %.3f \n", generalAbsoluteWheelRotationTarget);*/
           isDoneMoving = true;
+        } else {
+          /*printf("motorGetPosition: %.3f  motorGetTargetPosition: %.3f \n", mFrontLeft.get_position(), currentLeftSideMotorTarget);
+          printf("AverageAbsoluteVelocity: %.3f  CurrentMaxStoppingSpeed: %.3f \n", averageAbsoluteVelocity(), currentMaxStoppingSpeed);
+          printf("AverageAbsoluteTargetPositionError: %.3f   generalAbsoluteWheelRotationTarget: %.3f \n", averageAbsoluteTargetPositionError(), generalAbsoluteWheelRotationTarget);*/
         }
 
-        delay(4);
-      }
+        delay(40);
+
     }
     delay(10);
+  }
+}
+
+void waitUntilDoneMoving() {
+  while (!isDoneMoving) {
+    delay(4);
   }
 }
 

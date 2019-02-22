@@ -20,10 +20,6 @@ using namespace pros;
  * task, not resume it from where it left off.
  */
 
-void calibrate();
-void flip();
-void manualFire();
-
 void opcontrol() {
 	int PARTYTIME = 420;
 
@@ -34,15 +30,11 @@ void opcontrol() {
 	float vertical, horizontal;
 	float averageDriveSpeed;
 
-	controlPartner.print(0, 4, "poopy");
-
 	while (420 == PARTYTIME) {
 
-		lcd::print(0, "%d %d %d", (lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-		                 (lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-		                 (lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
-
-
+		//lcd::print(0, "%d %d %d", (lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
+		//                 (lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
+		//                 (lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
 
 		if (controlMaster.get_digital(DIGITAL_L2)) {
 			currentDriveSpeed = 1.0; // turbo
@@ -64,19 +56,22 @@ void opcontrol() {
 
 
 		if (controlMaster.get_digital_new_press(DIGITAL_R2)) { flip(); }
-		if (controlMaster.get_digital_new_press(DIGITAL_R2)) { manualFire(); }
-
-
+		if (controlMaster.get_digital_new_press(DIGITAL_A)) { manualFire(); }
+		if (controlMaster.get_digital_new_press(DIGITAL_X)) { primePuncher(); }
+		if (controlMaster.get_digital_new_press(DIGITAL_B)) { toggleBallIntake(); }
+		if (controlMaster.get_digital_new_press(DIGITAL_UP)) { ballCountUp(); }
+		if (controlMaster.get_digital_new_press(DIGITAL_DOWN)) { ballCountDown(); }
 
 		if (!isFiring) {
 			if (controlMaster.get_digital(DIGITAL_L1)) { mLift.move_velocity(200); }
-			else if (mLift.get_position() > 20) { mLift.move_velocity(-100); }
+			else if (mLift.get_position() > 7*180) { mLift.move_velocity(-100); }
+			else if (mLift.get_position() < 7*50 && mLift.get_position() > 7*5) { mLift.move_velocity(-100); }
 			else { mLift.set_brake_mode(MOTOR_BRAKE_BRAKE); stopMotor(mLift); }
 		}
 
 
 
-		delay(25);
+		delay(20);
 
 	}
 }
