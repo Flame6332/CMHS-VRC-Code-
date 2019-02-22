@@ -58,7 +58,8 @@ void opcontrol() {
 		if (controlMaster.get_digital_new_press(DIGITAL_R2)) { flip(); }
 		if (controlMaster.get_digital_new_press(DIGITAL_A)) { manualFire(); }
 		if (controlMaster.get_digital_new_press(DIGITAL_X)) { primePuncher(); }
-		if (controlMaster.get_digital_new_press(DIGITAL_B)) { toggleBallIntake(); }
+		if (controlMaster.get_digital_new_press(DIGITAL_B)) { toggleAutoBallIntake(); }
+		if (controlMaster.get_digital_new_press(DIGITAL_B)) { toggleAutoBallIntake(); }
 		if (controlMaster.get_digital_new_press(DIGITAL_UP)) { ballCountUp(); }
 		if (controlMaster.get_digital_new_press(DIGITAL_DOWN)) { ballCountDown(); }
 

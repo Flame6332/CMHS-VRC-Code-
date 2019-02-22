@@ -22,12 +22,12 @@ void autonomous() {
   //drive(18, 0.5, 1, 5, 200);
   //rotate(360, 0.5, 10, 30, 200);
   //drive(-18, 0.03, 1, 5, 200);
-  flagSide8pt(BLUE);
+  flagSide7pt(BLUE);
 }
 
 
-void flagSide8pt(int color) {
-  toggleBallIntake();
+void flagSide7pt(int color) {
+  toggleAutoBallIntake();
   drive(-24, 5, 1, 4, 200);
   drive(-16, 3, 1, 4, 100);
   drive(24+13.5, 0.5, 1, 4, 200);

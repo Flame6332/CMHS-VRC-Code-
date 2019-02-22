@@ -7,11 +7,19 @@
 using namespace std;
 using namespace pros;
 
+/*
+  NOTE:
+    The ball shooters relative position gets slowly corrupted over
+    time due to the presence of the slip gear making it impossible to
+    be perfect with position, so it's designed to overshoot sometimes
+*/
 
 bool isFiring = false;
 bool isPrimed = false;
-int primeUpdateLoopsRemaining = 0;
-bool isBallIntaking = false;
+int primePeriodLength = 1000;
+int primePeriodRemainingTime = 0;
+bool isAutoIntakeEnabled = false;
+bool isBallIntakeOn = false;
 int currentBallCount = 1; // preload 1 ball
 
 void manualFire() {
@@ -23,33 +31,42 @@ void waitUntilDoneFiring() {
     delay(5);
   }
 }
+void manualFireAndWait() {
+  manualFire(); waitUntilDoneFiring();
+}
+bool isPuncherStopped() {
+  if (abs(mPuncher.get_actual_velocity()) < 2) {
+    return true;
+  } else {return false;}
+}
 void primePuncher() {
-  if (!isPrimed) { // if its a fresh prime, reset position
+  // if its not currently primed, and not still sliding after the end of a previous slide, reset position
+  if (!isPrimed && isPuncherStopped()) {
     mPuncher.tare_position();
   }
   isPrimed = true;
-  mPuncher.move_absolute(450, 200);
-  primeUpdateLoopsRemaining = 700;
+  mPuncher.move_absolute(600, 200);
+  primePeriodRemainingTime = primePeriodLength;
 }
 static void endPrime() {
   isPrimed = false;
   stopMotor(mPuncher);
 }
 
-static void enableIntake() {
-  isBallIntaking = true;
+static void turnOnIntake() {
+  isBallIntakeOn = true;
   mIntake.move_velocity(200);
 }
-static void disableIntake() {
-  isBallIntaking = false;
+static void turnOffIntake() {
+  isBallIntakeOn = false;
   stopMotor(mIntake);
   mIntake.set_brake_mode(MOTOR_BRAKE_BRAKE);
 }
-void toggleBallIntake() {
-  if (!isBallIntaking) {
-    enableIntake();
+void toggleAutoBallIntake() {
+  if (!isAutoIntakeEnabled) {
+    isAutoIntakeEnabled = true;
   } else {
-    disableIntake();
+    isAutoIntakeEnabled = false;
   }
 }
 
@@ -83,46 +100,40 @@ static void updateLoop(void* param) {
 
     lcd::print(0, "%d",getCurrentBallCount());
 
-    if (isBallIntaking) {
-      mIntake.move_velocity(200);
-    }
+    if (isAutoIntakeEnabled) {
 
-    if (isInitialSwitchJustPressed) {
-      ballCountUp();
-      if (currentBallCount >= 2) {
-        disableIntake();
-        lcd::print(0, "%d",getCurrentBallCount());
-        controlMaster.clear_line(0);
-        controlMaster.set_text(0, 0, ""+getCurrentBallCount());
-      }
-    }
-    if (isInitialSwitchJustReleased) {
-      controlMaster.clear_line(0);
-      controlMaster.set_text(0, 0, ""+getCurrentBallCount());
+        turnOnIntake();
+        if (isInitialSwitchJustPressed) {
+          ballCountUp();
+          if (currentBallCount >= 2) {
+            turnOffIntake();
+            lcd::print(0, "%d",getCurrentBallCount());
+            controlMaster.clear_line(0);
+            controlMaster.set_text(0, 0, ""+getCurrentBallCount());
+          }
+        }
+        if (isInitialSwitchJustReleased) {
+          controlMaster.clear_line(0);
+          controlMaster.set_text(0, 0, ""+getCurrentBallCount());
+        }
+
     }
 
     if (isFiring) {
-      disableIntake();
-      if (!isPrimed) {mPuncher.tare_position();}
-      primeUpdateLoopsRemaining = 0; // clear it out
-      mLift.set_brake_mode(MOTOR_BRAKE_HOLD);
+      turnOffIntake();
+      if (!isPrimed && isPuncherStopped()) {mPuncher.tare_position();}
+      endPrime();
       mPuncher.set_brake_mode(MOTOR_BRAKE_COAST);
-      moveAtVelocityNoStop(mLift, 100, 10, 200);
-      //printf("John \n");
+      moveAtVelocityNoStop(mLift, 100, 10, 200);  //printf("John \n");
       endPrime();
       ballCountDown();
       moveAtVelocityNoStop(mPuncher, 1160, 20, 200);
-      stopMotor(mPuncher);
-      //printf("dfhn \n");
-      moveAtVelocityNoStop(mLift, 25, 10, 200);
-      mLift.set_brake_mode(MOTOR_BRAKE_BRAKE);
-      enableIntake();
+      stopMotor(mPuncher); //printf("dfhn \n");  //moveAtVelocityNoStop(mLift, 25, 10, 200); mLift.set_brake_mode(MOTOR_BRAKE_BRAKE);
+      turnOnIntake();
       isFiring = false;
-    } else if (isPrimed) {
-        if (primeUpdateLoopsRemaining > 0) {
-          primeUpdateLoopsRemaining--;
-        }
-        else {
+    }
+    else if (isPrimed) {
+        if (primePeriodRemainingTime <= 0) {
           endPrime();
         }
     }
@@ -131,6 +142,15 @@ static void updateLoop(void* param) {
   }
 
 }
+
+static void timingLoop(void* param) { // simple external timing loop
+  int dt = 10; // (delta) (change in time) : miliseconds per loop
+  while (1234) {
+    primePeriodRemainingTime -= dt;
+    delay(dt);
+  }
+}
+
 
 static void updateSwitchBoolean() {
   isInitialSwitchJustPressed = false;
@@ -155,4 +175,6 @@ static void updateSwitchBoolean() {
 void startFiringTask() {
   Task fireTask(updateLoop, (void*)"PROS", TASK_PRIORITY_DEFAULT,
                 TASK_STACK_DEPTH_DEFAULT, "fireTask");
+  Task fireTimingTask(timingLoop, (void*)"PROS", TASK_PRIORITY_DEFAULT,
+                TASK_STACK_DEPTH_DEFAULT, "fireTimingTask");
 }
