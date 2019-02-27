@@ -10,7 +10,7 @@ using namespace pros;
 
 bool isFlipping = false;
 bool isRetracted = true;
-bool shouldToggleUpdate = false;
+bool shouldToggleUpdate = false; // i have no idea what this does, i'd probably just leave it though
 
 void flip() {
   if (!hasCalibrated) {return;}

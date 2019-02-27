@@ -19,15 +19,28 @@ void on_center_button() {
  * to keep execution time for this mode under a few seconds.
  */
 
- Motor mFrontLeft(1);
- Motor mFrontRight(2, true);
- Motor mBackLeft(3);
- Motor mBackRight(4, true);
+extern const int RED = 1;
+extern const int BLUE = -1;
 
- Motor mIntake(5, true);
- Motor mPuncher(6);
- Motor mFlippy(17, true);
- Motor mLift(8, true);
+
+// PSSST, HEY YOU, PLEASE, OVER HERE
+// CHANGE THE CURRENT COLOR BEFORE EACH MATCH
+extern const int CURRENT_COLOR = RED;
+
+
+
+
+ Motor mFrontLeft (1);
+ Motor mFrontRight (2, true);
+ Motor mBackLeft (3);
+ Motor mBackRight (4, true);
+
+ Motor mIntake (5, true);
+ Motor mPuncher (6);
+ Motor mFlippy (17, true);
+ Motor mRam (8, true);
+
+ Vision visionSensor (16);
 
  Controller controlMaster(CONTROLLER_MASTER);
  Controller controlPartner(CONTROLLER_PARTNER);
@@ -36,12 +49,13 @@ bool hasCalibrated;
 
 void calibrate() {
 		mFlippy.tare_position();
-		mPuncher.tare_position();
-		mLift.tare_position();
+		//mPuncher.tare_position();
+		mRam.tare_position();
 		hasCalibrated = true;
 }
 
 void startFlippyTask();
+void startAutoFireTask();
 void startFiringTask();
 void startAutonomousMovementTask();
 
@@ -58,15 +72,16 @@ void initialize() {
 	mIntake.set_encoder_units(MOTOR_ENCODER_DEGREES);
 	mPuncher.set_encoder_units(MOTOR_ENCODER_DEGREES);
 	mFlippy.set_encoder_units(MOTOR_ENCODER_DEGREES);
-	mLift.set_encoder_units(MOTOR_ENCODER_DEGREES);
+	mRam.set_encoder_units(MOTOR_ENCODER_DEGREES);
 
-	mLift.tare_position();
+	mRam.tare_position();
 	mPuncher.tare_position();
 	mFlippy.set_zero_position(190);
 	hasCalibrated = true;
 
 	mFlippy.set_brake_mode(E_MOTOR_BRAKE_BRAKE);
 	startFlippyTask();
+	startAutoFireTask();
 	startFiringTask();
 	startAutonomousMovementTask();
 }

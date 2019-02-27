@@ -18,13 +18,18 @@ void manualFireAndWait();
 void primePuncher();
 void toggleFlippy();
 void toggleAutoBallIntake();
-void ballCountUp();
-void ballCountDown();
+void addLoadedBall();
+void turnOnIntake();
+void turnOffIntake();
+void reverseIntake();
+void autoAim();
+void cancelAutoAim();
 int getCurrentBallCount();
 
 void drive(float, float, float, float, float);
 void rotate(float, float, float, float, float);
 void waitUntilDoneMoving();
 void ramForMiliseconds(int, int);
+void cancelAndStopMovement();
 
 #endif

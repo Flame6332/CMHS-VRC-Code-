@@ -11,16 +11,34 @@ using namespace pros;
   NOTE:
     The ball shooters relative position gets slowly corrupted over
     time due to the presence of the slip gear making it impossible to
-    be perfect with position, so it's designed to overshoot sometimes
+    be perfect with position, so it's designed to overshoot a bit
+    and then recalibrate every once in a while.
 */
 
 bool isFiring = false;
-bool isPrimed = false;
-int primePeriodLength = 1000;
-int primePeriodRemainingTime = 0;
+static bool isPrimed = false;
+static int primePeriodLength = 4000;
+static int primePeriodRemainingTime = 0;
+
 bool isAutoIntakeEnabled = false;
-bool isBallIntakeOn = false;
-int currentBallCount = 1; // preload 1 ball
+static bool isBallIntakeOn = false;
+static bool isPurging = false;
+static bool isDoubleBallPurging = false;
+
+static const int purgePeriodLength = 700; // in miliseconds
+static const int doubleBallPurgePeriodLength = 900; // in miliseconds
+static const int purgePeriodCooldownLength = 200; // in miliseconds
+static int purgePeriodRemainingTime = 0;
+
+static int currentBallCount = 0;
+static bool hasTopSwitchBeenReleasedYet = false;
+static float currentBallDistanceCovered = 0;
+static const float maxExpectedSingleBallTravelDistance = 8.3; // around this many inches
+
+static const int primeRotationDistance = 750;
+static const int fireRotationDistance = 1140;
+
+static void ballCountDown();
 
 void manualFire() {
   if (!hasCalibrated) {return;}
@@ -31,7 +49,7 @@ void waitUntilDoneFiring() {
     delay(5);
   }
 }
-void manualFireAndWait() {
+void manualFireAndWait() { // used in autonomous
   manualFire(); waitUntilDoneFiring();
 }
 bool isPuncherStopped() {
@@ -45,22 +63,39 @@ void primePuncher() {
     mPuncher.tare_position();
   }
   isPrimed = true;
-  mPuncher.move_absolute(600, 200);
+  mPuncher.move_absolute(primeRotationDistance, 200);
   primePeriodRemainingTime = primePeriodLength;
 }
 static void endPrime() {
   isPrimed = false;
   stopMotor(mPuncher);
+  mPuncher.set_brake_mode(MOTOR_BRAKE_COAST);
 }
 
-static void turnOnIntake() {
+void turnOnIntake() {
   isBallIntakeOn = true;
   mIntake.move_velocity(200);
 }
-static void turnOffIntake() {
+void reverseIntake() {
+  isBallIntakeOn = true;
+  mIntake.move_velocity(-200);
+}
+void turnOffIntake() {
   isBallIntakeOn = false;
   stopMotor(mIntake);
   mIntake.set_brake_mode(MOTOR_BRAKE_BRAKE);
+}
+static void purge() {
+  isPurging = true;
+  purgePeriodRemainingTime = purgePeriodLength;
+}
+static void doubleBallPurge() {
+  isPurging = true;
+  purgePeriodRemainingTime = doubleBallPurgePeriodLength;
+  isDoubleBallPurging = true;
+}
+static void endPurge() {
+  isPurging = false;
 }
 void toggleAutoBallIntake() {
   if (!isAutoIntakeEnabled) {
@@ -73,12 +108,27 @@ void toggleAutoBallIntake() {
 int getCurrentBallCount() {
   return currentBallCount;
 }
-void ballCountUp() {
+static void liveUpdateDisplayedBallCount() { // lcd can be updated live
+  if (hasTopSwitchBeenReleasedYet) {lcd::print(0, "bals: %d topSwitchWasReleased",getCurrentBallCount());}
+  else {lcd::print(0, "bals: %d",getCurrentBallCount());}
+}
+static void updateDisplayedBallCount() { // controller can only be updated once a while
+  liveUpdateDisplayedBallCount();
+  controlMaster.print(1, 1,"booby %d", getCurrentBallCount()); //to_string(getCurrentBallCount()).c_str());
+}
+static void ballCountUp() {
   currentBallCount++;
 }
-void ballCountDown() {
+void addLoadedBall() {
+  hasTopSwitchBeenReleasedYet = true;
+  currentBallCount++;
+}
+static void ballCountDown() {
   if (currentBallCount > 0) {
     currentBallCount--;
+  }
+  else {
+    // return counting error or something
   }
 }
 
@@ -86,51 +136,131 @@ static ADIDigitalIn initialIntakeSwitch (4);
   static bool isInitialSwitchPressed = false;
   static bool isInitialSwitchJustPressed = false;
   static bool isInitialSwitchJustReleased = false;
-static ADIDigitalIn finalIntakeSwitch (5);
+static ADIDigitalIn finalIntakeSwitch (3);
   static bool isFinalSwitchPressed = false;
   static bool isFinalSwitchJustPressed = false;
   static bool isFinalSwitchJustReleased = false;
 
 static void updateSwitchBoolean();
-
+  static int updateLoopDT = 6; // update loop delta time, number of miliseconds per frame
 static void updateLoop(void* param) {
-  while (666) {
+  // wait a second and then make sure balls are zeroed on init
+  delay(500);
+  currentBallCount = 0;
 
+  while (666) {
     updateSwitchBoolean();
 
-    lcd::print(0, "%d",getCurrentBallCount());
+    // keep track of estimated ball count even in manual for switching back
+    if (isInitialSwitchJustPressed) {
+      ballCountUp();
+      updateDisplayedBallCount();
+    }
 
     if (isAutoIntakeEnabled) {
 
-        turnOnIntake();
-        if (isInitialSwitchJustPressed) {
-          ballCountUp();
-          if (currentBallCount >= 2) {
-            turnOffIntake();
-            lcd::print(0, "%d",getCurrentBallCount());
-            controlMaster.clear_line(0);
-            controlMaster.set_text(0, 0, ""+getCurrentBallCount());
+      if (!isPurging) { // if not purging
+          if (isInitialSwitchJustPressed) {
+            currentBallDistanceCovered = 0; // just started
           }
-        }
-        if (isInitialSwitchJustReleased) {
-          controlMaster.clear_line(0);
-          controlMaster.set_text(0, 0, ""+getCurrentBallCount());
+          else if (isInitialSwitchPressed) {
+            // this formula is achieved by taking intake rolling diameter (2.5in) multiplied by pi to
+            // convert 1 rotation to 7.85398 chain travel inches, and converting 1 minute to 60000 ms
+            // so the formula becomes () rpm * 7.85398 / 60000 ) * number of miliseconds
+            // all divided by 2 because the ball moves half the distance of the chain
+            currentBallDistanceCovered += (mIntake.get_actual_velocity()*updateLoopDT*0.0001309)/2;
+            if (currentBallDistanceCovered > maxExpectedSingleBallTravelDistance) {
+              lcd::print(5, "Too far %.4f",currentBallDistanceCovered);
+              doubleBallPurge();
+            }
+          }
+          else if (isInitialSwitchJustReleased) {
+            lcd::print(5, "%.4f",currentBallDistanceCovered); // print out each balls distance
+          }
+
+          // intake on by default, will check all the cases where it might need to be shut off
+          turnOnIntake();
+
+          if (isFinalSwitchJustReleased) {
+            // if theres 2 balls, and one has passed top switch
+            hasTopSwitchBeenReleasedYet = true;
+          }
+
+          if (currentBallCount == 2) {
+            if (hasTopSwitchBeenReleasedYet && isFinalSwitchPressed) {
+              // if one has passed top swtich and the other bumps into top switch
+              turnOffIntake();
+            }
+          }
+
+          if (currentBallCount >= 3) {
+            purge(); // something terrible has happened
+          }
+
+      }
+
+      else { // isPurging
+        lcd::print(3, "we purgin");
+        float prePurgePosition = mIntake.get_position();
+        mIntake.move_velocity(-200);
+        // grace period so that second ball bumping into top switch at the same
+        // time as 3rd ball hitting bottom switch doesn't trigger the equivalent
+        // as the first ball getting sucked back into the intake
+        //int gracePeriodTimeRemaining = 300;
+        //bool didSecondBallAlsoExit = false;
+        int dt = 5; // change in time
+        while (purgePeriodRemainingTime > 0) {
+          // still updating switch stuff for this little loop
+          updateSwitchBoolean();
+          // yeah nah the shooter task is going into
+          // lockdown until we get this extra ball out of here.
+          delay(dt);
+          //gracePeriodTimeRemaining -= dt;
+          /*if (finalIntakeSwitch.get_value() && gracePeriodTimeRemaining <= 0) {
+              // use get value instead of switch booleans, as the entire task
+              // is in lockdown and that stuff isn't being updated
+              // if it hits the top switch while reversing,
+              // reset the released boolean as it backed the ball over it
+              hasTopSwitchBeenReleasedYet = false;
+          }
+          if (isInitialSwitchJustReleased && gracePeriodTimeRemaining <= 0) {
+            didSecondBallAlsoExit = true;
+          }*/
         }
 
-    }
+        ballCountDown(); // 3rd ball
+        //if (didSecondBallAlsoExit && !isDoubleBallPurging) {ballCountDown();}
+
+        // idk what i'm even doing anymore, at this point, all these edge
+        // cases can't cover everything, not to mention im only using
+        // 2 switches, I think the best bet is just to leave it as is and
+        // add the safety manual mode
+
+        turnOffIntake(); // stop the the intake and then
+        while (purgePeriodRemainingTime > -1*purgePeriodCooldownLength) {
+          delay(5); //just wait a little longer for ball to roll out
+        }
+
+        // back everything up to pre-purge position
+        lcd::print(3, "=> resetting");
+        moveAtVelocity(mIntake, prePurgePosition*1.2, 7, 200); //*1.2 for slight ball decline
+        endPurge(); // the chaos is over.
+        lcd::print(3, "");
+        updateDisplayedBallCount();
+      }
+
+    } // end auto intake enabled
 
     if (isFiring) {
       turnOffIntake();
       if (!isPrimed && isPuncherStopped()) {mPuncher.tare_position();}
       endPrime();
-      mPuncher.set_brake_mode(MOTOR_BRAKE_COAST);
-      moveAtVelocityNoStop(mLift, 100, 10, 200);  //printf("John \n");
-      endPrime();
       ballCountDown();
-      moveAtVelocityNoStop(mPuncher, 1160, 20, 200);
-      stopMotor(mPuncher); //printf("dfhn \n");  //moveAtVelocityNoStop(mLift, 25, 10, 200); mLift.set_brake_mode(MOTOR_BRAKE_BRAKE);
-      turnOnIntake();
+      moveAtVelocityNoStop(mPuncher, fireRotationDistance, 20, 200);
+      stopMotor(mPuncher);
+      hasTopSwitchBeenReleasedYet = false; // next ball has yet to be released
       isFiring = false;
+      updateDisplayedBallCount();
     }
     else if (isPrimed) {
         if (primePeriodRemainingTime <= 0) {
@@ -138,15 +268,16 @@ static void updateLoop(void* param) {
         }
     }
 
-    delay(6); // response time
+    delay(updateLoopDT); // response time
   }
 
 }
 
-static void timingLoop(void* param) { // simple external timing loop
+static void timingLoop(void* param) { // simple external timing loop for accuracy
   int dt = 10; // (delta) (change in time) : miliseconds per loop
   while (1234) {
     primePeriodRemainingTime -= dt;
+    purgePeriodRemainingTime -= dt;
     delay(dt);
   }
 }

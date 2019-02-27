@@ -23,8 +23,8 @@ using namespace pros;
 void opcontrol() {
 	int PARTYTIME = 420;
 
-	float nonTurboDriveSpeed = 0.6;
-	float nonTurboRotationSpeed = 0.55;
+	const float nonTurboDriveSpeed = 0.6;
+	const float nonTurboRotationSpeed = 0.55;
  	float currentDriveSpeed = nonTurboDriveSpeed;
  	float currentRotationSpeed = nonTurboRotationSpeed;
 	float vertical, horizontal;
@@ -36,39 +36,57 @@ void opcontrol() {
 		//                 (lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 		//                 (lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
 
-		if (controlMaster.get_digital(DIGITAL_L2)) {
-			currentDriveSpeed = 1.0; // turbo
-			currentRotationSpeed = 1.0; // turbo
-		} else {
-			currentDriveSpeed = nonTurboDriveSpeed;
-			currentRotationSpeed = nonTurboRotationSpeed; }
-			// STICK DRIVE CONTROLS
-		vertical = controlMaster.get_analog(ANALOG_LEFT_Y) * currentDriveSpeed;
-		horizontal = controlMaster.get_analog(ANALOG_RIGHT_X) * currentRotationSpeed;
-			mFrontLeft.move( vertical + horizontal );
-			mBackLeft.move( vertical + horizontal );
-			mFrontRight.move( vertical - horizontal );
-			mBackRight.move( vertical - horizontal );
+		if ( ( abs(controlMaster.get_analog(ANALOG_LEFT_Y))
+							+ abs(controlMaster.get_analog(ANALOG_RIGHT_X)) ) > 50) {
+				cancelAutoAim(); // if you're trying to get out of it
+		}
+
+		if (!isAutoDriving) { // can't be controlling it if auto aiming
+			if (controlMaster.get_digital(DIGITAL_L2)) {
+				currentDriveSpeed = 1.0; // turbo
+				currentRotationSpeed = 1.0; // turbo
+			} else {
+				currentDriveSpeed = nonTurboDriveSpeed;
+				currentRotationSpeed = nonTurboRotationSpeed; }
+				// STICK DRIVE CONTROLS
+			vertical = controlMaster.get_analog(ANALOG_LEFT_Y) * currentDriveSpeed;
+			horizontal = controlMaster.get_analog(ANALOG_RIGHT_X) * currentRotationSpeed;
+				mFrontLeft.move( vertical + horizontal );
+				mBackLeft.move( vertical + horizontal );
+				mFrontRight.move( vertical - horizontal );
+				mBackRight.move( vertical - horizontal );
+		}
+
 
 
 		if (controlMaster.get_digital(DIGITAL_L2) &&
 						controlMaster.get_digital(DIGITAL_LEFT)) { calibrate(); }
 
+		if (isAutoIntakeEnabled == false) {
+			if (controlMaster.get_digital(DIGITAL_L1)) { turnOnIntake(); }
+			else if (controlMaster.get_digital(DIGITAL_DOWN)) { reverseIntake(); }
+			else { turnOffIntake(); }
+		}
+		else if (controlMaster.get_digital(DIGITAL_L1) || controlMaster.get_digital(DIGITAL_DOWN)) {
+			toggleAutoBallIntake(); // disable it, since it must be enable due to previous if statement
+		}
 
 		if (controlMaster.get_digital_new_press(DIGITAL_R2)) { flip(); }
 		if (controlMaster.get_digital_new_press(DIGITAL_A)) { manualFire(); }
 		if (controlMaster.get_digital_new_press(DIGITAL_X)) { primePuncher(); }
 		if (controlMaster.get_digital_new_press(DIGITAL_B)) { toggleAutoBallIntake(); }
-		if (controlMaster.get_digital_new_press(DIGITAL_B)) { toggleAutoBallIntake(); }
-		if (controlMaster.get_digital_new_press(DIGITAL_UP)) { ballCountUp(); }
-		if (controlMaster.get_digital_new_press(DIGITAL_DOWN)) { ballCountDown(); }
 
-		if (!isFiring) {
-			if (controlMaster.get_digital(DIGITAL_L1)) { mLift.move_velocity(200); }
-			else if (mLift.get_position() > 7*180) { mLift.move_velocity(-100); }
-			else if (mLift.get_position() < 7*50 && mLift.get_position() > 7*5) { mLift.move_velocity(-100); }
-			else { mLift.set_brake_mode(MOTOR_BRAKE_BRAKE); stopMotor(mLift); }
-		}
+		if (controlMaster.get_digital_new_press(DIGITAL_Y)) { autoAim(); }
+
+		//if (controlMaster.get_digital_new_press(DIGITAL_UP)) { ballCountUp(); }
+		//if (controlMaster.get_digital_new_press(DIGITAL_DOWN)) { ballCountDown(); }
+
+		/*if (!isFiring) {
+			if (controlMaster.get_digital(DIGITAL_L1)) { mRam.move_velocity(200); }
+			else if (mRam.get_position() > 7*180) { mRam.move_velocity(-100); }
+			else if (mRam.get_position() < 7*50 && mRam.get_position() > 7*5) { mRam.move_velocity(-100); }
+			else { mRam.set_brake_mode(MOTOR_BRAKE_BRAKE); stopMotor(mRam); }
+		}*/
 
 
 

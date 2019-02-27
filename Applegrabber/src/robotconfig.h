@@ -12,9 +12,11 @@ extern Motor mBackRight;
 extern Motor mIntake;
 extern Motor mPuncher;
 extern Motor mFlippy;
-extern Motor mLift;
+extern Motor mRam;
 
 extern Controller controlMaster;
 extern Controller controlPartner;
+
+extern Vision visionSensor;
 
 #endif

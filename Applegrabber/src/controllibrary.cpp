@@ -38,7 +38,7 @@ void moveAtVelocityNoStop(Motor motor, int target, int tolerance, int rpm) {
   }
 }
 
-/// AUTONOMOUS ONLY FUNCTIONS ///
+/// AUTONOMOUS OR AUTO-DRIVE ONLY FUNCTIONS ///
 
 static float wheelDiameter = 4.13;
 // converts inches to degrees of rotation
@@ -57,7 +57,7 @@ static float accelerationDistance = 0;
 static float accelerationWheelRot = distToWheelRot(accelerationDistance);
 static float deccelerationDistance = 0;
 static float deccelerationWheelRot = distToWheelRot(deccelerationDistance);
-static float accelerationFactor = 0.5; // deccel too
+static const float accelerationFactor = 0.5; // deccel too
 
 static float currentLeftSideMotorTarget = 0;
 static float currentRightSideMotorTarget = 0;
@@ -140,6 +140,9 @@ static void setMovementVelocity(float rpm) {
 }
 
 void ramForMiliseconds(int velocity, int miliseconds) {
+  while (!isDoneMoving) {
+    delay(4);
+  }
   mFrontRight.move_velocity(velocity);
   mBackRight.move_velocity(velocity);
   mFrontLeft.move_velocity(velocity);
@@ -193,6 +196,14 @@ void waitUntilDoneMoving() {
   while (!isDoneMoving) {
     delay(4);
   }
+}
+
+void cancelAndStopMovement() {
+  mFrontRight.move_velocity(0);
+  mBackRight.move_velocity(0);
+  mFrontLeft.move_velocity(0);
+  mBackLeft.move_velocity(0);
+  isDoneMoving = true;
 }
 
 void startAutonomousMovementTask() {

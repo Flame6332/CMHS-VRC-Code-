@@ -14,29 +14,35 @@
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-int RED = 1;
-int BLUE = -1;
-void flagSide8pt(int);
+// remember
+//RED = 1;
+//BLUE = -1;
+void flagSide7pt();
+void programmingSkills();
 
 void autonomous() {
   //drive(18, 0.5, 1, 5, 200);
   //rotate(360, 0.5, 10, 30, 200);
+  //rotate(360, 0.5, 10, 30, 100);
   //drive(-18, 0.03, 1, 5, 200);
-  flagSide7pt(BLUE);
+  //flagSide7pt();
+  programmingSkills();
 }
 
 
-void flagSide7pt(int color) {
+void flagSide7pt() {
+  int COLOR = CURRENT_COLOR;
   toggleAutoBallIntake();
+  addLoadedBall();
   drive(-24, 5, 1, 4, 200);
   drive(-16, 3, 1, 4, 100);
   drive(24+13.5, 0.5, 1, 4, 200);
-  if (color == RED) {
-    rotate(-90*color, 0.5, 10, 30, 200);
+  if (COLOR == RED) {
+    rotate(-90*COLOR, 0.5, 10, 30, 200);
     drive(-8, 0.5, 1, 2, 200);
   }
-  if (color == BLUE) {
-    rotate(-85*color, 0.5, 10, 30, 200);
+  if (COLOR == BLUE) {
+    rotate(-85*COLOR, 0.5, 10, 30, 200);
     drive(-5, 0.5, 1, 2, 200);
   }
   primePuncher();
@@ -48,11 +54,11 @@ void flagSide7pt(int color) {
   waitUntilDoneMoving();
   manualFire();
   waitUntilDoneFiring();
-  if (color == RED) {
+  if (COLOR == RED) {
     drive(-15, 4, 1, 4, 200);
     drive(15, 4, 1, 4, 200);
   }
-  if (color == BLUE) {
+  if (COLOR == BLUE) {
     rotate(190, 2, 10, 30, 200);
     drive(8, 0.5, 1, 4, 200);
     moveAtVelocity(mFlippy, 15, 10, 200); // smacks flag on blue side instead
@@ -60,7 +66,7 @@ void flagSide7pt(int color) {
     drive(-8, 5, 1, 4, 200);
     rotate(180, 5, 10, 30, 200);
   }
-  rotate(-90*color, 5, 10, 30, 200);
+  rotate(-90*COLOR, 5, 10, 30, 200);
   moveAtVelocity(mFlippy, 15, 10, 200);
   drive(10, 10, 1, 4, 200);
   waitUntilDoneMoving();
