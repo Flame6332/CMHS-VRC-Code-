@@ -71,3 +71,9 @@ void flagSide7pt() {
   waitUntilDoneMoving();
   raiseFlippy();
 }
+
+void farSideOverPlatform() {
+  int COLOR = CURRENT_COLOR;
+  toggleAutoBallIntake();
+  addLoadedBall();
+}

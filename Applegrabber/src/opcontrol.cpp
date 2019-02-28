@@ -102,7 +102,7 @@ void opcontrol() {
 			 if (!isRamEnabled) {
 				 isRamEnabled = true;
 				 disableFlippy();
-				 mRam.move_absolute(1800, 200);
+				 mRam.move_absolute(900, 200);
 			 }
 			 else {
 				 isRamEnabled = false;

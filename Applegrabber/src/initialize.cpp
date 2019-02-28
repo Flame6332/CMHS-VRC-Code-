@@ -37,8 +37,8 @@ extern const int CURRENT_COLOR = RED;
 
  Motor mIntake (5, true);
  Motor mPuncher (6);
- Motor mFlippy (17, true);
- Motor mRam (8, true);
+ Motor mFlippy (15, true);
+ Motor mRam (8);
 
  Vision visionSensor (16);
 
