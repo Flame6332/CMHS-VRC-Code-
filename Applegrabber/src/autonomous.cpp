@@ -22,11 +22,11 @@ void programmingSkills();
 
 void autonomous() {
   //drive(18, 0.5, 1, 5, 200);
-  //rotate(360, 0.5, 10, 30, 200);
-  //rotate(360, 0.5, 10, 30, 100);
+  drive(-5, 0.03, 1, 2, 200);
+  rotate(30, 0.5, 10, 30, 200);
   //drive(-18, 0.03, 1, 5, 200);
   //flagSide7pt();
-  programmingSkills();
+  //programmingSkills();
 }
 
 
@@ -61,14 +61,13 @@ void flagSide7pt() {
   if (COLOR == BLUE) {
     rotate(190, 2, 10, 30, 200);
     drive(8, 0.5, 1, 4, 200);
-    moveAtVelocity(mFlippy, 15, 10, 200); // smacks flag on blue side instead
-    moveAtVelocity(mFlippy, 180, 10, 200); // smacks flag on blue side instead
-    drive(-8, 5, 1, 4, 200);
+    lowerFlippy(); // smacks flag on blue side instead
+    raiseFlippy();
     rotate(180, 5, 10, 30, 200);
   }
   rotate(-90*COLOR, 5, 10, 30, 200);
-  moveAtVelocity(mFlippy, 15, 10, 200);
+  lowerFlippy();
   drive(10, 10, 1, 4, 200);
   waitUntilDoneMoving();
-  moveAtVelocity(mFlippy, 180, 10, 200);
+  raiseFlippy();
 }

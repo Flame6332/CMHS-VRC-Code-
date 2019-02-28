@@ -9,14 +9,12 @@ void programmingSkills() {
 
   primePuncher();
   drive(-24, 30, 1, 1, 200); //
-  waitUntilDoneMoving();
   manualFireAndWait(); // first shot
 
   drive(-20, 100, 1, 1, 200);
   ramForMiliseconds(-200, 200); // ram extra reliability and force
   drive(48, 5, 1, 3, 200); // back up for high flag
   primePuncher(); // prime on way there
-  waitUntilDoneMoving();
   manualFireAndWait(); // fire at middle flag
 
   drive(48, 20, 1, 4, 200); // drive to far side
@@ -25,9 +23,9 @@ void programmingSkills() {
 
   drive(-56, 30, 1, 3, 200); // ram cap over and eat ball
   rotate(-90, 20, 10, 30, 200); // rotate around to flip cap
-  moveAtVelocity(mFlippy, 15, 10, 200); // lower flippy as rotating
+  lowerFlippy(); // lower flippy as rotating
   waitUntilDoneMoving();
-  moveAtVelocity(mFlippy, 180, 10, 200); // flip cap
+  raiseFlippy();  // flip cap
 
 
 

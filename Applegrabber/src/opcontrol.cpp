@@ -23,12 +23,16 @@ using namespace pros;
 void opcontrol() {
 	int PARTYTIME = 420;
 
+	const int dT = 9; // delta time, change in time, delay (ms)
 	const float nonTurboDriveSpeed = 0.6;
 	const float nonTurboRotationSpeed = 0.55;
  	float currentDriveSpeed = nonTurboDriveSpeed;
  	float currentRotationSpeed = nonTurboRotationSpeed;
 	float vertical, horizontal;
 	float averageDriveSpeed;
+	float milisecondsRequiredToDisableAutoIntake = 700;
+	float milisecondsLeftToDisableAutoIntake = milisecondsRequiredToDisableAutoIntake;
+	bool isRamEnabled = false;
 
 	while (420 == PARTYTIME) {
 
@@ -57,26 +61,54 @@ void opcontrol() {
 				mBackRight.move( vertical - horizontal );
 		}
 
-
-
 		if (controlMaster.get_digital(DIGITAL_L2) &&
 						controlMaster.get_digital(DIGITAL_LEFT)) { calibrate(); }
 
-		if (isAutoIntakeEnabled == false) {
+
+		if (isAutoIntakeEnabled == true) {
+
+			if (controlMaster.get_digital(DIGITAL_B)) {
+				// if being held while enabled, start to count down
+				milisecondsLeftToDisableAutoIntake -= dT;
+				if (milisecondsLeftToDisableAutoIntake <= 0) {
+					toggleAutoBallIntake();  //disable
+					milisecondsLeftToDisableAutoIntake = milisecondsRequiredToDisableAutoIntake;
+				}
+			}
+			else {
+				milisecondsLeftToDisableAutoIntake = milisecondsRequiredToDisableAutoIntake;
+			}
+
+			if (controlMaster.get_digital_new_press(DIGITAL_DOWN)) { manualPurge(); }
+		}
+		else {
+			// enable auto ball intake with the click of a button
+			if (controlMaster.get_digital_new_press(DIGITAL_B)) { toggleAutoBallIntake(); }
+
 			if (controlMaster.get_digital(DIGITAL_L1)) { turnOnIntake(); }
 			else if (controlMaster.get_digital(DIGITAL_DOWN)) { reverseIntake(); }
 			else { turnOffIntake(); }
-		}
-		else if (controlMaster.get_digital(DIGITAL_L1) || controlMaster.get_digital(DIGITAL_DOWN)) {
-			toggleAutoBallIntake(); // disable it, since it must be enable due to previous if statement
+			/*if (controlMaster.get_digital(DIGITAL_L1) || controlMaster.get_digital(DIGITAL_DOWN)) {
+				toggleAutoBallIntake(); // disable it, since it must be enable due to previous if statement
+			}*/
 		}
 
 		if (controlMaster.get_digital_new_press(DIGITAL_R2)) { flip(); }
+		if (controlMaster.get_digital_new_press(DIGITAL_R1)) { disableFlippy(); }
 		if (controlMaster.get_digital_new_press(DIGITAL_A)) { manualFire(); }
-		if (controlMaster.get_digital_new_press(DIGITAL_X)) { primePuncher(); }
-		if (controlMaster.get_digital_new_press(DIGITAL_B)) { toggleAutoBallIntake(); }
-
 		if (controlMaster.get_digital_new_press(DIGITAL_Y)) { autoAim(); }
+
+		if (controlMaster.get_digital_new_press(DIGITAL_X)) {
+			 if (!isRamEnabled) {
+				 isRamEnabled = true;
+				 disableFlippy();
+				 mRam.move_absolute(1800, 200);
+			 }
+			 else {
+				 isRamEnabled = false;
+				 mRam.move_absolute(6, 200);
+			 }
+		 }
 
 		//if (controlMaster.get_digital_new_press(DIGITAL_UP)) { ballCountUp(); }
 		//if (controlMaster.get_digital_new_press(DIGITAL_DOWN)) { ballCountDown(); }
@@ -90,7 +122,7 @@ void opcontrol() {
 
 
 
-		delay(20);
+		delay(dT);
 
 	}
 }

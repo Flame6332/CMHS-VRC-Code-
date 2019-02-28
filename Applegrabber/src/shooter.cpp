@@ -24,19 +24,20 @@ bool isAutoIntakeEnabled = false;
 static bool isBallIntakeOn = false;
 static bool isPurging = false;
 static bool isDoubleBallPurging = false;
+static bool isManualPurging = false;
 
 static const int purgePeriodLength = 700; // in miliseconds
+static const int manualPurgePeriodLength = 400; // in miliseconds
 static const int doubleBallPurgePeriodLength = 900; // in miliseconds
 static const int purgePeriodCooldownLength = 200; // in miliseconds
 static int purgePeriodRemainingTime = 0;
-
 static int currentBallCount = 0;
 static bool hasTopSwitchBeenReleasedYet = false;
 static float currentBallDistanceCovered = 0;
 static const float maxExpectedSingleBallTravelDistance = 8.3; // around this many inches
 
 static const int primeRotationDistance = 750;
-static const int fireRotationDistance = 1140;
+static const int fireRotationDistance = 1160;
 
 static void ballCountDown();
 
@@ -50,7 +51,7 @@ void waitUntilDoneFiring() {
   }
 }
 void manualFireAndWait() { // used in autonomous
-  manualFire(); waitUntilDoneFiring();
+  waitUntilDoneMoving(); manualFire(); waitUntilDoneFiring();
 }
 bool isPuncherStopped() {
   if (abs(mPuncher.get_actual_velocity()) < 2) {
@@ -88,11 +89,20 @@ void turnOffIntake() {
 static void purge() {
   isPurging = true;
   purgePeriodRemainingTime = purgePeriodLength;
+  isDoubleBallPurging = false;
+  isManualPurging = false;
+}
+void manualPurge() {
+  isPurging = true;
+  isManualPurging = true;
+  purgePeriodRemainingTime = manualPurgePeriodLength;
+  isDoubleBallPurging = false;
 }
 static void doubleBallPurge() {
   isPurging = true;
   purgePeriodRemainingTime = doubleBallPurgePeriodLength;
   isDoubleBallPurging = true;
+  isManualPurging = false;
 }
 static void endPurge() {
   isPurging = false;
@@ -114,7 +124,7 @@ static void liveUpdateDisplayedBallCount() { // lcd can be updated live
 }
 static void updateDisplayedBallCount() { // controller can only be updated once a while
   liveUpdateDisplayedBallCount();
-  controlMaster.print(1, 1,"booby %d", getCurrentBallCount()); //to_string(getCurrentBallCount()).c_str());
+  controlMaster.print(1, 1,"bals %d", getCurrentBallCount()); //to_string(getCurrentBallCount()).c_str());
 }
 static void ballCountUp() {
   currentBallCount++;
@@ -200,7 +210,8 @@ static void updateLoop(void* param) {
       }
 
       else { // isPurging
-        lcd::print(3, "we purgin");
+        if(!isDoubleBallPurging) {lcd::print(3, "we purgin");}
+        else {lcd::print(3, "we DOUBLE-BALL purgin");}
         float prePurgePosition = mIntake.get_position();
         mIntake.move_velocity(-200);
         // grace period so that second ball bumping into top switch at the same
@@ -228,7 +239,7 @@ static void updateLoop(void* param) {
           }*/
         }
 
-        ballCountDown(); // 3rd ball
+        if (!isManualPurging) { ballCountDown(); } // 3rd ball
         //if (didSecondBallAlsoExit && !isDoubleBallPurging) {ballCountDown();}
 
         // idk what i'm even doing anymore, at this point, all these edge
@@ -241,9 +252,15 @@ static void updateLoop(void* param) {
           delay(5); //just wait a little longer for ball to roll out
         }
 
-        // back everything up to pre-purge position
-        lcd::print(3, "=> resetting");
-        moveAtVelocity(mIntake, prePurgePosition*1.2, 7, 200); //*1.2 for slight ball decline
+        if (!isDoubleBallPurging) { // the natural reintake process must take place,
+          // for doubleball purge as it naturally retriggers bottom swtich since
+          // there's still a ball
+          // back everything up to pre-purge position
+          lcd::print(3, "=> resetting");
+          float resetTarget = prePurgePosition + (0.4*(prePurgePosition - mIntake.get_position()));
+          moveAtVelocity(mIntake, resetTarget, 7, 200);
+        }
+
         endPurge(); // the chaos is over.
         lcd::print(3, "");
         updateDisplayedBallCount();
@@ -256,7 +273,7 @@ static void updateLoop(void* param) {
       if (!isPrimed && isPuncherStopped()) {mPuncher.tare_position();}
       endPrime();
       ballCountDown();
-      moveAtVelocityNoStop(mPuncher, fireRotationDistance, 20, 200);
+      moveAtVelocityNoStop(mPuncher, fireRotationDistance, 10, 200);
       stopMotor(mPuncher);
       hasTopSwitchBeenReleasedYet = false; // next ball has yet to be released
       isFiring = false;

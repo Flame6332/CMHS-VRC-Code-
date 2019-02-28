@@ -54,9 +54,8 @@ static float toDeg(float x) {
 static void updateLoop(void* param) {
   float deltaX = 0;
   float deltaY = 0;
-  float xMiddleCoord;
-  float yMiddleCoord;
-  const int rotationConst = 231;
+  const int rotationConst = 274;
+  const float ANGLE_TOLERANCE = 3;
   float rotationRequired = 0;
 
   // the rotation constant is a result of placing an object to the very edge
@@ -97,7 +96,7 @@ static void updateLoop(void* param) {
         rotationRequired,
         visionSensor.get_object_count());
 
-      rotate(rotationRequired, 3, 3, 15, 200);
+      if (abs(rotationRequired) > ANGLE_TOLERANCE) rotate(rotationRequired, 7, 5, 15, 200);
       waitUntilDoneMoving();
 
       isAutoDriving = false;

@@ -4,16 +4,17 @@ Left Stick Y -> Forwards/Backwards Drive
 Right Stick X -> Rotation Drive
 
 L2 -> Turbo
-L1 -> Run Intake Manual Mode and Disable Auto-intake
-DOWN -> Purge Intake Manually and Disable Auto-intake
+L1 -> Run Intake Manual Mode
+DOWN -> Purge Intake Manually
 
-R1 -> Flip Cap / Hold For Flipper Slap / Auto-enable Flipper On-Click
-R2 -> Toggle Flipper
+R2 -> Flip Cap / Auto-enable Flipper On-Click
+R1 -> Disable Flipper
 
-Y -> Seek And Destroy (Auto-Fire Nearest Flag)
-X -> Prime Puncher
+X -> Toggle Ram
+
+Y -> Seek And Prime (Auto-Aim + prime for Nearest Flag)
 A-> Manual Fire
-B -> Toggle Auto-Ball Intake (Auto-enabled At Autonomous)
+B -> Toggle Auto-Ball Intake (Auto-enabled At Autonomous), hold for disable
 
 
 LEFT + L2 -> Calibrate Flipper

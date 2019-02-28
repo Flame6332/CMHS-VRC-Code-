@@ -51,6 +51,7 @@ void calibrate() {
 		mFlippy.tare_position();
 		//mPuncher.tare_position();
 		mRam.tare_position();
+		mRam.move_absolute(3, 50);
 		hasCalibrated = true;
 }
 
@@ -76,10 +77,11 @@ void initialize() {
 
 	mRam.tare_position();
 	mPuncher.tare_position();
-	mFlippy.set_zero_position(190);
+	mFlippy.tare_position();
 	hasCalibrated = true;
 
 	mFlippy.set_brake_mode(E_MOTOR_BRAKE_BRAKE);
+	mRam.move_absolute(3, 50);
 	startFlippyTask();
 	startAutoFireTask();
 	startFiringTask();

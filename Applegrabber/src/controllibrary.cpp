@@ -27,6 +27,23 @@ void moveAtVelocity(Motor motor, int target, int tolerance, int rpm) {
   }
   stopMotor(motor);
 }
+bool moveAtVelocityWithTimeOut(Motor motor, int target, int tolerance, int rpm, int miliseconds) {
+  motor.move_absolute(target, rpm);
+  int timeRemaining = miliseconds;
+  while (!( (motor.get_position() < target+(tolerance*2)) && (motor.get_position() > target-(tolerance*2)) )) {
+    delay(tolerance*2); // delay loop until increased accuracy
+    timeRemaining -= tolerance*2;
+    if (timeRemaining < 0) { goto endOfMoveAtVelocityWithTimeOut;  }
+  }
+  while (!( (motor.get_position() < target+tolerance) && (motor.get_position() > target-tolerance) )) {
+    delay(tolerance); // delay loop with increased accuracy
+    timeRemaining -= tolerance;
+    if (timeRemaining < 0) { goto endOfMoveAtVelocityWithTimeOut;  }
+  }
+  endOfMoveAtVelocityWithTimeOut:
+  stopMotor(motor);
+  return timeRemaining < 0; // true if timed out
+}
 
 void moveAtVelocityNoStop(Motor motor, int target, int tolerance, int rpm) {
   motor.move_absolute(target, rpm);
@@ -162,6 +179,16 @@ static bool shouldBeAccelerating() {
   else {return false;}
 }
 
+static bool isCloseToTarget() {
+  if (generalAbsoluteWheelRotationTarget < 4) {
+        // if there's 50% of the trip left
+        return ((averageAbsoluteTargetPositionError() / generalAbsoluteWheelRotationTarget) < 0.50);
+  }
+  else {
+    return (averageAbsoluteTargetPositionError() < 3); // it has to be within x inches
+  }
+}
+
 static void updateLoop(void* param) {
   while (69) {
     while (!isDoneMoving) {
@@ -173,16 +200,17 @@ static void updateLoop(void* param) {
         // this was added because the robot backed into my feet because it assumed it was done at the first move,
         // since it was stopped moving at the beginning.
         if (averageAbsoluteVelocity() < currentMaxStoppingSpeed
-            && (averageAbsoluteTargetPositionError() / generalAbsoluteWheelRotationTarget) < 0.20) {
+            && isCloseToTarget()) {
               /*printf("AverageAbsoluteVelocity: %.3f \n", averageAbsoluteVelocity());
               printf("CurrentMaxStoppingSpeed: %.3f \n", currentMaxStoppingSpeed);
               printf("AverageAbsoluteTargetPositionError: %.3f \n", averageAbsoluteTargetPositionError());
-              printf("generalAbsoluteWheelRotationTarget: %.3f \n", generalAbsoluteWheelRotationTarget);*/
+              printf("generalAbsoluteWheelRotationTarget: %.3f \n\n", generalAbsoluteWheelRotationTarget);*/
           isDoneMoving = true;
         } else {
           /*printf("motorGetPosition: %.3f  motorGetTargetPosition: %.3f \n", mFrontLeft.get_position(), currentLeftSideMotorTarget);
           printf("AverageAbsoluteVelocity: %.3f  CurrentMaxStoppingSpeed: %.3f \n", averageAbsoluteVelocity(), currentMaxStoppingSpeed);
-          printf("AverageAbsoluteTargetPositionError: %.3f   generalAbsoluteWheelRotationTarget: %.3f \n", averageAbsoluteTargetPositionError(), generalAbsoluteWheelRotationTarget);*/
+          printf("AverageAbsoluteTargetPositionError: %.3f   generalAbsoluteWheelRotationTarget: %.3f \n", averageAbsoluteTargetPositionError(), generalAbsoluteWheelRotationTarget);
+          /**/
         }
 
         delay(40);
@@ -194,7 +222,7 @@ static void updateLoop(void* param) {
 
 void waitUntilDoneMoving() {
   while (!isDoneMoving) {
-    delay(4);
+    delay(5);
   }
 }
 
