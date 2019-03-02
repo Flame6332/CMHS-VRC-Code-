@@ -26,8 +26,8 @@ void autonomous() {
   //drive(-5, 0.03, 1, 2, 200);
   //rotate(360, 0.5, 10, 30, 200);
   //drive(-18, 0.03, 1, 5, 200);
-  //standardFlagSide();
-  simpleBackSide();
+  standardFlagSide();
+  //simpleBackSide();
   //programmingSkills();
 }
 
@@ -93,9 +93,9 @@ void simpleBackSide() {
   drive(30+15, 10, 1, 4, 200);
   ramForMiliseconds(200, 210); // reset on wall
   drive(-24, 2, 1,4, 200);
-  rotate(-90, 2, 10, 30, 200);
+  rotate(-90*COLOR, 2, 10, 30, 200);
   drive(25, 1, 1,4, 200);
-  rotate(-90, 2, 10, 30, 200);
+  rotate(-90*COLOR, 2, 10, 30, 200);
   flipAndWait();
   drive(15, 2, 1,4, 200);
   flipAndWait();
