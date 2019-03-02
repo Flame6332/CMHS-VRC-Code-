@@ -94,10 +94,10 @@ void simpleBackSide() {
   ramForMiliseconds(200, 210); // reset on wall
   drive(-24, 2, 1,4, 200);
   rotate(-90, 2, 10, 30, 200);
-  drive(22, 2, 1,4, 200);
+  drive(25, 1, 1,4, 200);
   rotate(-90, 2, 10, 30, 200);
   flipAndWait();
-  drive(22, 2, 1,4, 200);
+  drive(15, 2, 1,4, 200);
   flipAndWait();
 
 }
