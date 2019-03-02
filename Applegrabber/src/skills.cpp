@@ -21,8 +21,14 @@ void programmingSkills() {
   rotate(90, 1, 10, 30, 200);
   ramForMiliseconds(200, 600); // ram into wall flipper side to calibrate
 
-  drive(-41, 1, 1, 2, 200); // ram cap over and eat ball
+  // GOOD
+
+
+
+  drive(-41.5, 0.5, 1, 3, 200); // ram cap over and eat ball
   drive(24, 1, 1, 4, 200);
+  rotate(90)
+
   rotate(-90, 0.5, 10, 30, 200);
   drive(18.5, 1, 1, 4, 200);
   rotate(-90, 0.5, 10, 30, 200);
