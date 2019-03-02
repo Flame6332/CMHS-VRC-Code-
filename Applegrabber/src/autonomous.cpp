@@ -19,13 +19,15 @@
 //BLUE = -1;
 void standardFlagSide();
 void programmingSkills();
+void simpleBackSide();
 
 void autonomous() {
   //drive(18, 0.5, 1, 5, 200);
   //drive(-5, 0.03, 1, 2, 200);
   //rotate(360, 0.5, 10, 30, 200);
   //drive(-18, 0.03, 1, 5, 200);
-  standardFlagSide();
+  //standardFlagSide();
+  simpleBackSide();
   //programmingSkills();
 }
 
