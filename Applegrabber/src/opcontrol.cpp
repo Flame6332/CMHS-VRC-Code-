@@ -62,7 +62,7 @@ void opcontrol() {
 		}
 
 		if (controlMaster.get_digital(DIGITAL_L2) &&
-						controlMaster.get_digital(DIGITAL_LEFT)) { calibrate(); }
+						controlMaster.get_digital_new_press(DIGITAL_LEFT)) { calibrate(); }
 
 
 		if (isAutoIntakeEnabled == true) {
@@ -106,7 +106,7 @@ void opcontrol() {
 			 }
 			 else {
 				 isRamEnabled = false;
-				 mRam.move_absolute(6, 200);
+				 mRam.move_absolute(3, 200);
 			 }
 		 }
 

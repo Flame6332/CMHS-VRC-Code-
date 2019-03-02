@@ -16,7 +16,7 @@ using namespace pros;
 bool isAutoDriving = false;
 bool isAutoFiring = false;
 
-static  const float PI = 3.141592654;
+static const float PI = 3.141592654;
 
 static const float X_AIM_POINT = 158; // 316 / 2fvf
 static const float Y_AIM_POINT = 106; // 212 / 2
@@ -50,13 +50,44 @@ static int rnd(float x) {
 static float toDeg(float x) {
   return (180./PI) * x;
 }
+static float absDist(float x1, float y1, float x2, float y2) {
+  return sqrt(pow(x2-x1, 2) + pow(y2-y1, 2));
+}
+
+static float flagColorOffset(vision_object_s_t visObj) {
+  float offset = (visObj.height * 0.5) * CURRENT_COLOR;
+  if (offset < 8) { offset = 8; }
+  return offset;
+}
+static float getYellowFlagMarkerTargetX(vision_object_s_t visObj) {
+  return (xMidCoord(visObj) + flagColorOffset(visObj));
+}
+static float getYellowFlagMarkerTargetY(vision_object_s_t visObj) {
+  return (yMidCoord(visObj));
+}
+static float getYellowFlagMarkerTargetDeltaX(vision_object_s_t visObj) {
+  return getYellowFlagMarkerTargetX(visObj) - X_AIM_POINT;
+}
+static float getYellowFlagMarkerTargetDeltaY(vision_object_s_t visObj) {
+  return getYellowFlagMarkerTargetY(visObj) - Y_AIM_POINT;
+}
+static float getYellowMarkerTargDistFromTarg(vision_object_s_t visObj) {
+  return absDist(getYellowFlagMarkerTargetX(visObj), getYellowFlagMarkerTargetY(visObj), X_AIM_POINT, Y_AIM_POINT);
+}
 
 static void updateLoop(void* param) {
   float deltaX = 0;
   float deltaY = 0;
-  const int rotationConst = 274;
-  const float ANGLE_TOLERANCE = 3;
+  const float rotationConst = 274;
+  const float DIST_CONST = 0.55;
+  const float ANGLE_TOLERANCE = 3; // degrees
+  const float DIST_TOLERANCE = 1; // inches
+  float distanceRequired = 0;
   float rotationRequired = 0;
+  int objCount = 0;
+  float closestObjDist = 0;
+  int closestObjNum = 0;
+
 
   // the rotation constant is a result of placing an object to the very edge
   // of the field of view of the camera, measuring the trangular distance of that object
@@ -71,40 +102,71 @@ static void updateLoop(void* param) {
       primePuncher();
       isAutoDriving = true;
 
+
       if (visionSensor.get_object_count() == 0) {
         cancelAutoAim();
         lcd::set_text(1, "No Objects Detected");
-        goto endOfAutoFire;
       }
+      else {
 
-      // 0 means largest object[0] first
-      visionSensor.read_by_sig(0, YELLOW_FLAG_MARKER_SIG,
-        NUM_OF_YELLOW_FLAG_MARKERS_TRACKED, yellowFlagMarkersArray);
+              // 0 means largest object[0] first
+              objCount =
+                visionSensor.read_by_sig(0, YELLOW_FLAG_MARKER_SIG,
+                  NUM_OF_YELLOW_FLAG_MARKERS_TRACKED, yellowFlagMarkersArray);
+              closestObjNum = 0;
 
-      deltaX = xMidCoord(yellowFlagMarkersArray[0]) - X_AIM_POINT;
-      deltaY = yMidCoord(yellowFlagMarkersArray[0]) - Y_AIM_POINT;
 
-      rotationRequired = atan(deltaX / rotationConst) * (180./PI);
 
-      lcd::set_text(1, "X_TARG: " + to_string(rnd(xMidCoord(yellowFlagMarkersArray[0]))) +
-        "  Y_TARG: " + to_string(rnd(yMidCoord(yellowFlagMarkersArray[0]))) +
-        "  ROT: " + to_string(rnd(rotationRequired)) +
-        "  CNT: " + to_string(visionSensor.get_object_count()));
-      printf("X_TARG: %0.1f Y_TARG: %0.1f ROT: %0.2f OBJCOUNT: %d  \n",
-        xMidCoord(yellowFlagMarkersArray[0]),
-        yMidCoord(yellowFlagMarkersArray[0]),
-        rotationRequired,
-        visionSensor.get_object_count());
+            closestObjDist = getYellowMarkerTargDistFromTarg( yellowFlagMarkersArray[0] );
+            closestObjNum = 0;
 
-      if (abs(rotationRequired) > ANGLE_TOLERANCE) rotate(rotationRequired, 7, 5, 15, 200);
-      waitUntilDoneMoving();
+            if (objCount > 1) {
+              for ( int i = 1; i < objCount; i++ ) {
+                  float i_ObjTargDistFromTarg = getYellowMarkerTargDistFromTarg( yellowFlagMarkersArray[i] );
+                  printf(" i is %i  objCount is %i", i, objCount);
+                  if (i_ObjTargDistFromTarg < closestObjDist) {
+                    closestObjDist = i_ObjTargDistFromTarg;
+                    closestObjNum = i;
+                  }
+              }
+            }
+
+            deltaX = getYellowFlagMarkerTargetDeltaX(yellowFlagMarkersArray[closestObjNum]);
+            deltaY = getYellowFlagMarkerTargetDeltaY(yellowFlagMarkersArray[closestObjNum]);
+
+          //  deltaX = (xMidCoord(yellowFlagMarkersArray[closestObjNum]) + flagColorOffset) - X_AIM_POINT;
+          //  deltaY = yMidCoord(yellowFlagMarkersArray[closestObjNum]) - Y_AIM_POINT;
+
+            //int flagColorOffset = (yellowFlagMarkersArray[0].height * 0.5f) * CURRENT_COLOR;
+          ///  if (flagColorOffset < 8) { flagColorOffset = 8; }
+
+            rotationRequired = atan(deltaX / rotationConst) * (180./PI);
+            distanceRequired = -deltaY * DIST_CONST;
+
+            lcd::set_text(1, "X_TARG: " + to_string(rnd(xMidCoord(yellowFlagMarkersArray[0]))) +
+              "  Y_TARG: " + to_string(rnd(yMidCoord(yellowFlagMarkersArray[0]))) +
+              "  ROT: " + to_string(rnd(rotationRequired)) +
+              "  CNT: " + to_string(visionSensor.get_object_count()));
+            lcd::print(2, "DT_DIST: %0.3f  ", distanceRequired);
+            printf("X_TARG: %0.1f Y_TARG: %0.1f ROT: %0.2f OBJCOUNT: %d  \n",
+              xMidCoord(yellowFlagMarkersArray[0]),
+              yMidCoord(yellowFlagMarkersArray[0]),
+              rotationRequired,
+              visionSensor.get_object_count());
+
+            if (abs(rotationRequired) > ANGLE_TOLERANCE) { rotate(rotationRequired, 2, 5, 15, 200); }
+            if (abs(distanceRequired) > DIST_TOLERANCE) { drive(distanceRequired, 2, 1, 2, 200); }
+
+            waitUntilDoneMoving();
+
+
+        }
 
       isAutoDriving = false;
       isAutoFiring = false;
+
     }
 
-    goto endOfAutoFire;
-    endOfAutoFire: // this is a jump point for premature cancellation
     delay(6); // response time
   }
 

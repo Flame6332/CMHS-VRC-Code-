@@ -17,59 +17,63 @@
 // remember
 //RED = 1;
 //BLUE = -1;
-void flagSide7pt();
+void standardFlagSide();
 void programmingSkills();
 
 void autonomous() {
   //drive(18, 0.5, 1, 5, 200);
-  drive(-5, 0.03, 1, 2, 200);
-  rotate(30, 0.5, 10, 30, 200);
+  //drive(-5, 0.03, 1, 2, 200);
+  //rotate(360, 0.5, 10, 30, 200);
   //drive(-18, 0.03, 1, 5, 200);
-  //flagSide7pt();
+  standardFlagSide();
   //programmingSkills();
 }
 
 
-void flagSide7pt() {
+void standardFlagSide() {
   int COLOR = CURRENT_COLOR;
   toggleAutoBallIntake();
   addLoadedBall();
-  drive(-24, 5, 1, 4, 200);
-  drive(-16, 3, 1, 4, 100);
-  drive(24+13.5, 0.5, 1, 4, 200);
+  drive(-30, 12, 1, 4, 200);
+  drive(-17, 3, 0.4, 7, 120);
+  drive(30+15, 10, 1, 4, 200);
+  ramForMiliseconds(200, 210); // reset on wall
+  primePuncher();
   if (COLOR == RED) {
+    drive(-3, 0.4, 1, 1.5, 200);
     rotate(-90*COLOR, 0.5, 10, 30, 200);
-    drive(-8, 0.5, 1, 2, 200);
+    drive(-3, 0.5, 1, 2, 200);
   }
   if (COLOR == BLUE) {
-    rotate(-85*COLOR, 0.5, 10, 30, 200);
-    drive(-5, 0.5, 1, 2, 200);
+    drive(-13, 0.4, 1, 1.5, 200);
+    rotate(-90*COLOR, 0.5, 10, 30, 200);
+    drive(-3, 0.5, 1, 2, 200);
   }
-  primePuncher();
-  waitUntilDoneMoving();
-  manualFire();
-  waitUntilDoneFiring();
+  manualFireAndWait();
   drive(-24, 0.5, 1, 4, 200);
   primePuncher(); // primes while drving
-  waitUntilDoneMoving();
-  manualFire();
-  waitUntilDoneFiring();
+  manualFireAndWait();
   if (COLOR == RED) {
     drive(-15, 4, 1, 4, 200);
     drive(15, 4, 1, 4, 200);
   }
   if (COLOR == BLUE) {
-    rotate(190, 2, 10, 30, 200);
-    drive(8, 0.5, 1, 4, 200);
-    lowerFlippy(); // smacks flag on blue side instead
-    raiseFlippy();
-    rotate(180, 5, 10, 30, 200);
+    rotate(180, 2, 10, 40, 200);
+    drive(8, 5, 1, 4, 200);
+    waitUntilDoneMoving();
+    flip(); // KNOCK THE FLAG, FLIP AND WAIT WILL LOWER SINCE ALREADY DISABLED
+    delay(400);
+    disableFlippy();
+    rotate(-180, 5, 10, 30, 200);
   }
-  rotate(-90*COLOR, 5, 10, 30, 200);
-  lowerFlippy();
-  drive(10, 10, 1, 4, 200);
-  waitUntilDoneMoving();
-  raiseFlippy();
+
+  rotate(60*COLOR, 5, 10, 30, 200);
+  drive(-48, 10, 1, 4,200);
+
+  //drive(10, 10, 1, 4, 200);
+  //waitUntilDoneMoving();
+  //raiseFlippy();
+
 }
 
 void farSideOverPlatform() {

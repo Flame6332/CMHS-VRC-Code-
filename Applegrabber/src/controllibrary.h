@@ -14,6 +14,7 @@ void waitUntilDoneFiring();
 
 void calibrate();
 void flip();
+void flipAndWait();
 void manualFire();
 void manualFireAndWait();
 void primePuncher();

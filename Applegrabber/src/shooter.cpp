@@ -152,7 +152,7 @@ static ADIDigitalIn finalIntakeSwitch (3);
   static bool isFinalSwitchJustReleased = false;
 
 static void updateSwitchBoolean();
-  static int updateLoopDT = 6; // update loop delta time, number of miliseconds per frame
+  static const int updateLoopDT = 6; // update loop delta time, number of miliseconds per frame
 static void updateLoop(void* param) {
   // wait a second and then make sure balls are zeroed on init
   delay(500);
@@ -214,11 +214,6 @@ static void updateLoop(void* param) {
         else {lcd::print(3, "we DOUBLE-BALL purgin");}
         float prePurgePosition = mIntake.get_position();
         mIntake.move_velocity(-200);
-        // grace period so that second ball bumping into top switch at the same
-        // time as 3rd ball hitting bottom switch doesn't trigger the equivalent
-        // as the first ball getting sucked back into the intake
-        //int gracePeriodTimeRemaining = 300;
-        //bool didSecondBallAlsoExit = false;
         int dt = 5; // change in time
         while (purgePeriodRemainingTime > 0) {
           // still updating switch stuff for this little loop
@@ -226,21 +221,10 @@ static void updateLoop(void* param) {
           // yeah nah the shooter task is going into
           // lockdown until we get this extra ball out of here.
           delay(dt);
-          //gracePeriodTimeRemaining -= dt;
-          /*if (finalIntakeSwitch.get_value() && gracePeriodTimeRemaining <= 0) {
-              // use get value instead of switch booleans, as the entire task
-              // is in lockdown and that stuff isn't being updated
-              // if it hits the top switch while reversing,
-              // reset the released boolean as it backed the ball over it
-              hasTopSwitchBeenReleasedYet = false;
-          }
-          if (isInitialSwitchJustReleased && gracePeriodTimeRemaining <= 0) {
-            didSecondBallAlsoExit = true;
-          }*/
+
         }
 
         if (!isManualPurging) { ballCountDown(); } // 3rd ball
-        //if (didSecondBallAlsoExit && !isDoubleBallPurging) {ballCountDown();}
 
         // idk what i'm even doing anymore, at this point, all these edge
         // cases can't cover everything, not to mention im only using

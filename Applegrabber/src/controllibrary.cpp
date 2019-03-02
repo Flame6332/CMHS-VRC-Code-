@@ -79,7 +79,7 @@ static const float accelerationFactor = 0.5; // deccel too
 static float currentLeftSideMotorTarget = 0;
 static float currentRightSideMotorTarget = 0;
 static float currentSetSpeed = 0;
-static bool isRotating = false;
+static bool isRotating = false; /// the entire robot is rotating
 
 void drive(float distance, float maxStoppingSpeed, float accelerationDist, float deccelerationDist, float speed) {
   while (!isDoneMoving) {
@@ -180,12 +180,14 @@ static bool shouldBeAccelerating() {
 }
 
 static bool isCloseToTarget() {
-  if (generalAbsoluteWheelRotationTarget < 4) {
+  if (generalAbsoluteWheelRotationTarget < distToWheelRot(4)) {
+        //lcd::set_text(1, "general target err " + to_string(averageAbsoluteTargetPositionError()));
         // if there's 50% of the trip left
         return ((averageAbsoluteTargetPositionError() / generalAbsoluteWheelRotationTarget) < 0.50);
   }
   else {
-    return (averageAbsoluteTargetPositionError() < 3); // it has to be within x inches
+    //lcd::set_text(1, "big dist " + to_string(averageAbsoluteTargetPositionError()));
+    return (averageAbsoluteTargetPositionError() < distToWheelRot(3)); // it has to be within x inches
   }
 }
 
@@ -201,13 +203,13 @@ static void updateLoop(void* param) {
         // since it was stopped moving at the beginning.
         if (averageAbsoluteVelocity() < currentMaxStoppingSpeed
             && isCloseToTarget()) {
-              /*printf("AverageAbsoluteVelocity: %.3f \n", averageAbsoluteVelocity());
+              printf("AverageAbsoluteVelocity: %.3f \n", averageAbsoluteVelocity());
               printf("CurrentMaxStoppingSpeed: %.3f \n", currentMaxStoppingSpeed);
               printf("AverageAbsoluteTargetPositionError: %.3f \n", averageAbsoluteTargetPositionError());
-              printf("generalAbsoluteWheelRotationTarget: %.3f \n\n", generalAbsoluteWheelRotationTarget);*/
+              printf("generalAbsoluteWheelRotationTarget: %.3f \n\n", generalAbsoluteWheelRotationTarget);/**/
           isDoneMoving = true;
         } else {
-          /*printf("motorGetPosition: %.3f  motorGetTargetPosition: %.3f \n", mFrontLeft.get_position(), currentLeftSideMotorTarget);
+          printf("motorGetPosition: %.3f  motorGetTargetPosition: %.3f \n", mFrontLeft.get_position(), currentLeftSideMotorTarget);
           printf("AverageAbsoluteVelocity: %.3f  CurrentMaxStoppingSpeed: %.3f \n", averageAbsoluteVelocity(), currentMaxStoppingSpeed);
           printf("AverageAbsoluteTargetPositionError: %.3f   generalAbsoluteWheelRotationTarget: %.3f \n", averageAbsoluteTargetPositionError(), generalAbsoluteWheelRotationTarget);
           /**/

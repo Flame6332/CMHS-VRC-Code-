@@ -1,6 +1,7 @@
 #include "main.h"
 #include "robotstate.h"
 #include "robotconfig.h"
+#include "controllibrary.h"
 
 void on_center_button() {
 	static bool pressed = false;
@@ -37,7 +38,7 @@ extern const int CURRENT_COLOR = RED;
 
  Motor mIntake (5, true);
  Motor mPuncher (6);
- Motor mFlippy (15, true);
+ Motor mFlippy (15);
  Motor mRam (8);
 
  Vision visionSensor (16);
@@ -48,10 +49,17 @@ extern const int CURRENT_COLOR = RED;
 bool hasCalibrated;
 
 void calibrate() {
+		mFlippy.move(127);
+		delay(200);
 		mFlippy.tare_position();
-		//mPuncher.tare_position();
+		stopMotor(mFlippy);
+		raiseFlippy();
+		mRam.move(-50);
+		delay(50);
+		stopMotor(mRam);
 		mRam.tare_position();
-		mRam.move_absolute(3, 50);
+		mRam.move_absolute(3, 200);
+		//mPuncher.tare_position();
 		hasCalibrated = true;
 }
 
@@ -81,7 +89,8 @@ void initialize() {
 	hasCalibrated = true;
 
 	mFlippy.set_brake_mode(E_MOTOR_BRAKE_BRAKE);
-	mRam.move_absolute(3, 50);
+	mFlippy.move_absolute(-20, 200);
+	mRam.move_absolute(3, 200);
 	startFlippyTask();
 	startAutoFireTask();
 	startFiringTask();

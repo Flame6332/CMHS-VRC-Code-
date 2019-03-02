@@ -9,12 +9,27 @@ using namespace pros;
 
 
 bool isFlipping = false;
-bool isFlippyEnabled = true;
+bool isFlippyEnabled = false;
 bool isFlippyRaised = true;
+static bool isHalfCarrying = false;
 
 void flip() {
   if (!hasCalibrated) { return; }
   isFlipping = true;
+}
+void flipAndWait() {
+  waitUntilDoneMoving();
+  if (!hasCalibrated) { return; }
+  isFlipping = true;
+  while (isFlipping) {
+    delay(5);
+  }
+}
+void beginHalfCarry() {
+  isHalfCarrying = true;
+}
+void endHalfCarry() {
+  isHalfCarrying = false;
 }
 
 void enableFlippy() {
@@ -32,39 +47,44 @@ void toggleFlippy() {
   }
 }
 void raiseFlippy() {
-  mFlippy.set_brake_mode(E_MOTOR_BRAKE_HOLD);
   isFlippyRaised = true;
   moveAtVelocityWithTimeOut(mFlippy, -20, 10, 200, 1200);
+  mFlippy.move_absolute(-20, 200);
 }
 void lowerFlippy() {
-  mFlippy.set_brake_mode(E_MOTOR_BRAKE_COAST);
   isFlippyRaised = false;
   moveAtVelocityWithTimeOut(mFlippy, -185, 10, 200, 1000);
 }
 
 
 static void updateLoop(void* param) {
+  calibrate(); // just in case we forgot to flip it up
   //bool shouldSlamDown = false;
   while (666) {
-    if (isFlippyEnabled && isFlippyRaised) {
-      lowerFlippy();
+    if (isHalfCarrying) {
+        mFlippy.move_absolute(-90, 200);
     }
-    else if (!isFlippyEnabled && !isFlippyRaised) {
-      raiseFlippy();
-    }
+    else {
+        if (isFlippyEnabled && isFlippyRaised) {
+          lowerFlippy();
+        }
+        else if (!isFlippyEnabled && !isFlippyRaised) {
+          raiseFlippy();
+        }
 
-    if (isFlipping) {
-      enableFlippy();
-      raiseFlippy(); // upsy
-      //if (controlMaster.get_digital(DIGITAL_R2)) {shouldSlamDown = true;}
-      //else {shouldSlamDown = false;}
-      while (controlMaster.get_digital(DIGITAL_R2)) { // while its being held
-        delay(4);
-      }
-      //if (shouldSlamDown) {moveAtVelocity(mFlippy, 15, 10, 200);}
-      //else {moveAtVelocity(mFlippy, 15, 10, 100);}
-      lowerFlippy(); //back down
-      isFlipping = false;
+        if (isFlipping) {
+          enableFlippy();
+          raiseFlippy(); // upsy
+          //if (controlMaster.get_digital(DIGITAL_R2)) {shouldSlamDown = true;}
+          //else {shouldSlamDown = false;}
+          while (controlMaster.get_digital(DIGITAL_R2)) { // while its being held
+            delay(4);
+          }
+          //if (shouldSlamDown) {moveAtVelocity(mFlippy, 15, 10, 200);}
+          //else {moveAtVelocity(mFlippy, 15, 10, 100);}
+          lowerFlippy(); //back down
+          isFlipping = false;
+        }
     }
     delay(6); // response time
   }
