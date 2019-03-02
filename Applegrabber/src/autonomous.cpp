@@ -81,3 +81,21 @@ void farSideOverPlatform() {
   toggleAutoBallIntake();
   addLoadedBall();
 }
+
+void simpleBackSide() {
+  int COLOR = CURRENT_COLOR;
+  toggleAutoBallIntake();
+  addLoadedBall();
+  drive(-30, 12, 1, 4, 200);
+  drive(-17, 3, 0.4, 7, 120);
+  drive(30+15, 10, 1, 4, 200);
+  ramForMiliseconds(200, 210); // reset on wall
+  drive(-24, 2, 1,4, 200);
+  rotate(-90, 2, 10, 30, 200);
+  drive(22, 2, 1,4, 200);
+  rotate(-90, 2, 10, 30, 200);
+  flipAndWait();
+  drive(22, 2, 1,4, 200);
+  flipAndWait();
+
+}
